@@ -17,28 +17,54 @@ describe("Wallet Contract", () => {
     wallet = await Wallet.deploy(user1.address);
   });
 
-  it("Deployment: Should Deploy Wallet Contract", async () => {
+  it("Deployment: Can Deploy Wallet Contract", async () => {
     expect(wallet.address).to.have.length.above(0);
     expect(await wallet.owner()).to.equal(owner.address);
   });
 
-  it("Ehter: Can receive ether", async () => {
-    await owner.sendTransaction({
-      to: wallet.address,
-      value: ethers.utils.parseEther("1.0"), // Sends exactly 1.0 ether
-    });
-
-    console.log(await web3.eth.getBalance(wallet.address));
-    console.log(await web3.utils.toWei("1", "ether"));
-
-    expect(await provider.getBalance(wallet.address)).to.equal(
-      await web3.utils.toWei("1", "ether")
-    );
+  it("Ehter: Can Receive Ether", async () => {
+    // await owner.sendTransaction({
+    //   to: wallet.address,
+    //   value: ethers.utils.parseEther("1.0"), // Sends exactly 1.0 ether
+    // });
+    // console.log(await web3.eth.getBalance(wallet.address));
+    // console.log(await web3.utils.toWei("1", "ether"));
+    // expect(await provider.getBalance(wallet.address)).to.equal(
+    //   await web3.utils.toWei("1", "ether")
+    // );
   });
 
-  it("ERC20", () => {});
+  it("Ehter: Can Send Ether", async () => {});
 
-  it("ERC721", () => {});
+  it("Ehter: Failed to Send Ether (only wallet owner)", async () => {});
+
+  it("ERC20: Can Approve ERC20 Token", () => {});
+
+  it("ERC20: Failed to Approve ERC20 Token (only wallet owner)", () => {});
+
+  it("ERC20: Can Transfer ERC20 Token", () => {});
+
+  it("ERC20: Failed to Transfer ERC20 Token (only wallet owner)", () => {});
+
+  it("ERC20: Can TransferFrom ERC20 Token", () => {});
+
+  it("ERC20: Failed to TransferFrom ERC20 Token (only wallet owner)", () => {});
+
+  it("ERC721: Can Approve ERC721 Token", () => {});
+
+  it("ERC721: Failed to Approve ERC721 Token (only wallet owner)", () => {});
+
+  it("ERC721: Can SetApprovalForAll ERC721 Token", () => {});
+
+  it("ERC721: Failed to SetApprovalForAll ERC721 Token (only wallet owner)", () => {});
+
+  it("ERC721: Can TransferFrom ERC721 Token", () => {});
+
+  it("ERC721: Failed to TransferFrom ERC721 Token (only wallet owner)", () => {});
+
+  it("WalletOwner: Can ChangeWalletOwner", () => {});
+
+  it("WalletOwner: Failed to ChangeWalletOwner (only owner)", () => {});
 
   // it("Should return the new greeting once it's changed", async function () {
   //   const Greeter = await ethers.getContractFactory("Greeter");
