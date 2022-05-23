@@ -1,12 +1,20 @@
 const { expect } = require("chai");
 
 describe("Wallet Contract", () => {
+  // Wallet Conract Infos
   let Wallet;
   let wallet;
+
+  // Test ERC20 Token Conract Infos
   let TestToken;
   let testToken;
+
+  // Test ERC721 Token Conract Infos
   let TestNFT;
   let testNFT;
+  let nftId;
+
+  // Account Infos
   let provider;
   let owner;
   let user1;
@@ -26,6 +34,7 @@ describe("Wallet Contract", () => {
     TestNFT = await hre.ethers.getContractFactory("TestNFT");
     testNFT = await TestNFT.deploy();
     await testNFT.safeMint(wallet.address);
+    nftId = 1;
   });
 
   it("Deployment: Can Deploy Wallet Contract", async () => {
@@ -142,17 +151,109 @@ describe("Wallet Contract", () => {
     }
   });
 
-  it("ERC721: Can Approve ERC721 Token", async () => {});
+  it("ERC721: Can Approve ERC721 Token", async () => {
+    await wallet
+      .connect(user1)
+      .approveERC721(testNFT.address, user2.address, nftId);
 
-  it("ERC721: Failed to Approve ERC721 Token (only wallet owner)", async () => {});
+    expect(await testNFT.getApproved(nftId)).to.equal(user2.address);
+  });
 
-  it("ERC721: Can SetApprovalForAll ERC721 Token", async () => {});
+  it("ERC721: Failed to Approve ERC721 Token (only wallet owner)", async () => {
+    try {
+      await wallet.approveERC721(testNFT.address, user2.address, nftId);
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not wallet owner");
+    }
+  });
 
-  it("ERC721: Failed to SetApprovalForAll ERC721 Token (only wallet owner)", async () => {});
+  it("ERC721: Can SetApprovalForAll ERC721 Token", async () => {
+    await wallet
+      .connect(user1)
+      .setApprovalForAllERC721(testNFT.address, user2.address, true);
 
-  it("ERC721: Can TransferFrom ERC721 Token", async () => {});
+    expect(
+      await testNFT.isApprovedForAll(wallet.address, user2.address)
+    ).to.equal(true);
+  });
 
-  it("ERC721: Failed to TransferFrom ERC721 Token (only wallet owner)", async () => {});
+  it("ERC721: Failed to SetApprovalForAll ERC721 Token (only wallet owner)", async () => {
+    try {
+      await wallet.setApprovalForAllERC721(
+        testNFT.address,
+        user2.address,
+        true
+      );
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not wallet owner");
+    }
+  });
+
+  it("ERC721: Can TransferFrom ERC721 Token Directly", async () => {
+    await wallet
+      .connect(user1)
+      .transferFromERC721(
+        testNFT.address,
+        wallet.address,
+        user2.address,
+        nftId
+      );
+
+    expect(await testNFT.ownerOf(nftId)).to.equal(user2.address);
+  });
+
+  it("ERC721: Failed to TransferFrom ERC721 Token Directly (only wallet owner)", async () => {
+    try {
+      await wallet.transferFromERC721(
+        testNFT.address,
+        wallet.address,
+        user2.address,
+        nftId
+      );
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not wallet owner");
+    }
+  });
+
+  it("ERC721: Can TransferFrom ERC721 Token from other", async () => {
+    await testNFT.safeMint(user2.address);
+    let tmpNftId = 2;
+
+    await testNFT.connect(user2).approve(wallet.address, tmpNftId);
+
+    await wallet
+      .connect(user1)
+      .transferFromERC721(
+        testNFT.address,
+        user2.address,
+        wallet.address,
+        tmpNftId
+      );
+
+    expect(await testNFT.ownerOf(tmpNftId)).to.equal(wallet.address);
+  });
+
+  it("ERC721: Failed to TransferFrom ERC721 Token from other (only wallet owner)", async () => {
+    try {
+      await testNFT.safeMint(user2.address);
+      let tmpNftId = 2;
+
+      await testNFT.connect(user2).approve(wallet.address, tmpNftId);
+
+      await wallet.transferFromERC721(
+        testNFT.address,
+        user2.address,
+        wallet.address,
+        tmpNftId
+      );
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not wallet owner");
+    }
+  });
 
   it("WalletOwner: Can ChangeWalletOwner", async () => {
     await wallet.changeWalletOwner(user2.address);

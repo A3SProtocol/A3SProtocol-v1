@@ -1,14 +1,17 @@
 const { expect } = require("chai");
 
 describe("Wallet Manager Contract", () => {
+  // Wallet Manager Contract Infos
   let WalletManager;
   let walletManager;
-  //
+
+  // Wallet Conract Infos
   let Wallet;
   let wallet;
   let walletAddress;
   let walletId;
-  //
+
+  // Account Infos
   let provider;
   let owner;
   let user1;

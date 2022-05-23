@@ -34,9 +34,13 @@ contract Wallet is IWallet, ERC721Holder {
         _;
     }
 
-    modifier enoughERC721(address _token, uint256 _tokenId) {
+    modifier enoughERC721(
+        address _token,
+        address _from,
+        uint256 _tokenId
+    ) {
         address tokenOwner = IERC721(_token).ownerOf(_tokenId);
-        require(tokenOwner == address(this), "Token not exist");
+        require(tokenOwner == address(_from), "Token not exist");
         _;
     }
 
@@ -90,7 +94,7 @@ contract Wallet is IWallet, ERC721Holder {
         address _token,
         address _to,
         uint256 _tokenId
-    ) external onlyWalletOwner enoughERC721(_token, _tokenId) {
+    ) external onlyWalletOwner enoughERC721(_token, address(this), _tokenId) {
         IERC721(_token).approve(_to, _tokenId);
         emit ApproveERC721(_token, _to, _tokenId);
     }
@@ -109,7 +113,7 @@ contract Wallet is IWallet, ERC721Holder {
         address _from,
         address _to,
         uint256 _tokenId
-    ) external onlyWalletOwner enoughERC721(_token, _tokenId) {
+    ) external onlyWalletOwner enoughERC721(_token, _from, _tokenId) {
         IERC721(_token).safeTransferFrom(_from, _to, _tokenId);
         emit TransferFromERC721(_token, _from, _to, _tokenId);
     }

@@ -14,8 +14,8 @@ contract TestNFT is ERC721, ERC721Enumerable, Ownable {
     constructor() ERC721("TestNFT", "TNFT") {}
 
     function safeMint(address to) public onlyOwner {
-        uint256 tokenId = _tokenIdCounter.current();
         _tokenIdCounter.increment();
+        uint256 tokenId = _tokenIdCounter.current();
         _safeMint(to, tokenId);
     }
 
