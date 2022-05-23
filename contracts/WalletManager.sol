@@ -69,6 +69,8 @@ contract WalletManager is ERC721 {
             Create2.computeAddress(_salt, keccak256(_getWalletBytecode(_to)));
     }
 
+    // function ownerOfWallet() {}
+
     function getWalletOwner(address _wallet) external view returns (address) {
         return walletOwners[_wallet];
     }

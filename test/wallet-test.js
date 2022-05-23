@@ -1,9 +1,12 @@
 const { expect } = require("chai");
-const { ethers, waffle, web3 } = require("hardhat");
 
 describe("Wallet Contract", () => {
   let Wallet;
   let wallet;
+  let TestToken;
+  let testToken;
+  let TestNFT;
+  let testNFT;
   let provider;
   let owner;
   let user1;
@@ -13,8 +16,16 @@ describe("Wallet Contract", () => {
   beforeEach(async () => {
     provider = waffle.provider;
     [owner, user1, user2, ...users] = await ethers.getSigners();
-    Wallet = await ethers.getContractFactory("Wallet");
+    Wallet = await hre.ethers.getContractFactory("Wallet");
     wallet = await Wallet.deploy(user1.address);
+
+    TestToken = await hre.ethers.getContractFactory("TestToken");
+    testToken = await TestToken.deploy();
+    await testToken.mint(wallet.address, 100);
+
+    TestNFT = await hre.ethers.getContractFactory("TestNFT");
+    testNFT = await TestNFT.deploy();
+    await testNFT.safeMint(wallet.address);
   });
 
   it("Deployment: Can Deploy Wallet Contract", async () => {
@@ -23,61 +34,137 @@ describe("Wallet Contract", () => {
   });
 
   it("Ehter: Can Receive Ether", async () => {
-    // await owner.sendTransaction({
-    //   to: wallet.address,
-    //   value: ethers.utils.parseEther("1.0"), // Sends exactly 1.0 ether
-    // });
-    // console.log(await web3.eth.getBalance(wallet.address));
-    // console.log(await web3.utils.toWei("1", "ether"));
-    // expect(await provider.getBalance(wallet.address)).to.equal(
-    //   await web3.utils.toWei("1", "ether")
-    // );
+    await owner.sendTransaction({
+      to: wallet.address,
+      value: hre.ethers.utils.parseEther("1.0"),
+    });
+    expect(await provider.getBalance(wallet.address)).to.equal(
+      hre.ethers.utils.parseEther("1.0")
+    );
   });
 
-  it("Ehter: Can Send Ether", async () => {});
+  it("Ehter: Can Send Ether", async () => {
+    await owner.sendTransaction({
+      to: wallet.address,
+      value: hre.ethers.utils.parseEther("1.0"),
+    });
 
-  it("Ehter: Failed to Send Ether (only wallet owner)", async () => {});
+    await wallet
+      .connect(user1)
+      .transferEther(user2.address, hre.ethers.utils.parseEther("0.5"));
 
-  it("ERC20: Can Approve ERC20 Token", () => {});
+    expect(await provider.getBalance(wallet.address)).to.equal(
+      hre.ethers.utils.parseEther("0.5")
+    );
 
-  it("ERC20: Failed to Approve ERC20 Token (only wallet owner)", () => {});
+    expect(await provider.getBalance(user2.address)).to.equal(
+      hre.ethers.utils.parseEther("10000.5") // default every user contain 10000 ehter
+    );
+  });
 
-  it("ERC20: Can Transfer ERC20 Token", () => {});
+  it("Ehter: Failed to Send Ether (only wallet owner)", async () => {
+    await owner.sendTransaction({
+      to: wallet.address,
+      value: hre.ethers.utils.parseEther("1.0"),
+    });
 
-  it("ERC20: Failed to Transfer ERC20 Token (only wallet owner)", () => {});
+    try {
+      await wallet.transferEther(
+        user2.address,
+        hre.ethers.utils.parseEther("0.5")
+      );
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not wallet owner");
+    }
+  });
 
-  it("ERC20: Can TransferFrom ERC20 Token", () => {});
+  it("ERC20: Can Transfer ERC20 Token", async () => {
+    await wallet
+      .connect(user1)
+      .transferERC20(testToken.address, user2.address, 50);
 
-  it("ERC20: Failed to TransferFrom ERC20 Token (only wallet owner)", () => {});
+    expect(await testToken.balanceOf(wallet.address)).to.equal(50);
+    expect(await testToken.balanceOf(user2.address)).to.equal(50);
+  });
 
-  it("ERC721: Can Approve ERC721 Token", () => {});
+  it("ERC20: Failed to Transfer ERC20 Token (only wallet owner)", async () => {
+    try {
+      await wallet.transferERC20(testToken.address, user2.address, 50);
 
-  it("ERC721: Failed to Approve ERC721 Token (only wallet owner)", () => {});
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not wallet owner");
+    }
+  });
 
-  it("ERC721: Can SetApprovalForAll ERC721 Token", () => {});
+  it("ERC20: Can Approve ERC20 Token", async () => {
+    await wallet
+      .connect(user1)
+      .approveERC20(testToken.address, user2.address, 100);
 
-  it("ERC721: Failed to SetApprovalForAll ERC721 Token (only wallet owner)", () => {});
+    expect(await testToken.allowance(wallet.address, user2.address)).to.equal(
+      100
+    );
+  });
 
-  it("ERC721: Can TransferFrom ERC721 Token", () => {});
+  it("ERC20: Failed to Approve ERC20 Token (only wallet owner)", async () => {
+    try {
+      await wallet.approveERC20(testToken.address, user2.address, 100);
 
-  it("ERC721: Failed to TransferFrom ERC721 Token (only wallet owner)", () => {});
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not wallet owner");
+    }
+  });
 
-  it("WalletOwner: Can ChangeWalletOwner", () => {});
+  it("ERC20: Can TransferFrom ERC20 Token", async () => {
+    await testToken.mint(user2.address, 100);
+    testToken.connect(user2).approve(wallet.address, 100);
 
-  it("WalletOwner: Failed to ChangeWalletOwner (only owner)", () => {});
+    await wallet
+      .connect(user1)
+      .transferFromERC20(testToken.address, user2.address, 100);
 
-  // it("Should return the new greeting once it's changed", async function () {
-  //   const Greeter = await ethers.getContractFactory("Greeter");
-  //   const greeter = await Greeter.deploy("Hello, world!");
-  //   await greeter.deployed();
+    expect(await testToken.balanceOf(wallet.address)).to.equal(200);
+  });
 
-  //   expect(await greeter.greet()).to.equal("Hello, world!");
+  it("ERC20: Failed to TransferFrom ERC20 Token (only wallet owner)", async () => {
+    try {
+      await testToken.mint(user2.address, 100);
+      testToken.connect(user2).approve(wallet.address, 100);
 
-  //   const setGreetingTx = await greeter.setGreeting("Hola, mundo!");
+      await wallet.transferFromERC20(testToken.address, user2.address, 100);
 
-  //   // wait until the transaction is mined
-  //   await setGreetingTx.wait();
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not wallet owner");
+    }
+  });
 
-  //   expect(await greeter.greet()).to.equal("Hola, mundo!");
-  // });
+  it("ERC721: Can Approve ERC721 Token", async () => {});
+
+  it("ERC721: Failed to Approve ERC721 Token (only wallet owner)", async () => {});
+
+  it("ERC721: Can SetApprovalForAll ERC721 Token", async () => {});
+
+  it("ERC721: Failed to SetApprovalForAll ERC721 Token (only wallet owner)", async () => {});
+
+  it("ERC721: Can TransferFrom ERC721 Token", async () => {});
+
+  it("ERC721: Failed to TransferFrom ERC721 Token (only wallet owner)", async () => {});
+
+  it("WalletOwner: Can ChangeWalletOwner", async () => {
+    await wallet.changeWalletOwner(user2.address);
+    expect(await wallet.walletOwner()).to.equal(user2.address);
+  });
+
+  it("WalletOwner: Failed to ChangeWalletOwner (only owner)", async () => {
+    try {
+      await wallet.connect(user1).changeWalletOwner(user2.address);
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not owner");
+    }
+  });
 });

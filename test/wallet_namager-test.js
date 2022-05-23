@@ -11,10 +11,10 @@ describe("Wallet Manager Contract", () => {
   let users;
 
   beforeEach(async () => {
-    provider = waffle.provider;
-    [owner, user1, user2, ...users] = await ethers.getSigners();
-    WalletManager = await ethers.getContractFactory("WalletManager");
-    walletManager = await WalletManager.deploy(user1.address);
+    // provider = waffle.provider;
+    // [owner, user1, user2, ...users] = await ethers.getSigners();
+    // WalletManager = await ethers.getContractFactory("WalletManager");
+    // walletManager = await WalletManager.deploy();
   });
 
   it("Deployment: Can Deploy Wallet Manager Contract", async () => {});

@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "./IWallet.sol";
 
+import "hardhat/console.sol";
+
 contract Wallet is IWallet, ERC721Holder {
     address public owner;
     address public walletOwner;
@@ -22,13 +24,13 @@ contract Wallet is IWallet, ERC721Holder {
 
     modifier enoughEther(uint256 _amount) {
         uint256 balance = address(this).balance;
-        require(balance <= _amount, "Not enough ether");
+        require(_amount <= balance, "Not enough ether");
         _;
     }
 
     modifier enoughERC2O(address _token, uint256 _amount) {
         uint256 balance = IERC20(_token).balanceOf(address(this));
-        require(balance <= _amount, "Not enough token");
+        require(_amount <= balance, "Not enough token");
         _;
     }
 
