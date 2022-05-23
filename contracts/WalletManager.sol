@@ -7,9 +7,11 @@ import "@openzeppelin/contracts/utils/Create2.sol";
 import "./Wallet.sol";
 import "./IWallet.sol";
 
+import "hardhat/console.sol";
+
 contract WalletManager is ERC721 {
     using Counters for Counters.Counter;
-    Counters.Counter private _tokenIds;
+    Counters.Counter private idCounter;
 
     mapping(uint256 => address) private walletAddresses;
     mapping(address => address) private walletOwners;
@@ -20,12 +22,16 @@ contract WalletManager is ERC721 {
         ERC721(_name, _symbol)
     {}
 
+    receive() external payable {}
+
     function mintWallet(address _to, bytes32 _salt) external {
-        _tokenIds.increment();
-        uint256 newTokenId = _tokenIds.current();
+        idCounter.increment();
+        uint256 amount = 0;
+        uint256 newTokenId = idCounter.current();
         bytes memory code = _getWalletBytecode(_to);
-        address newAddr = Create2.deploy(1, _salt, code);
-        _mint(msg.sender, newTokenId);
+
+        address newAddr = Create2.deploy(amount, _salt, code);
+        _mint(_to, newTokenId);
 
         walletAddresses[newTokenId] = newAddr;
         walletOwners[newAddr] = _to;
@@ -58,9 +64,10 @@ contract WalletManager is ERC721 {
     {
         bytes memory bytecode = type(Wallet).creationCode;
         return abi.encodePacked(bytecode, abi.encode(address(_to))); // 不確定 abi.encode(address(this))
+        // return bytecode;
     }
 
-    function getWalletAddressWithSalt(bytes32 _salt, address _to)
+    function walletAddressWithSalt(bytes32 _salt, address _to)
         external
         view
         returns (address)
@@ -71,7 +78,15 @@ contract WalletManager is ERC721 {
 
     // function ownerOfWallet() {}
 
-    function getWalletOwner(address _wallet) external view returns (address) {
+    function walletAddressOf(uint256 _tokenId) external view returns (address) {
+        return walletAddresses[_tokenId];
+    }
+
+    function walletOwnerOfWalletAddress(address _wallet)
+        external
+        view
+        returns (address)
+    {
         return walletOwners[_wallet];
     }
 }
