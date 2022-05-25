@@ -124,9 +124,9 @@ contract A3SWalletFactory is ERC721, IA3SWalletFactory {
     /**
      * @dev Returns bytecode of A3SWallet contract.
      */
-    function _walletBytecode() internal pure returns (bytes memory) {
+    function _walletBytecode() internal view returns (bytes memory) {
         bytes memory bytecode = type(A3SWallet).creationCode;
-        return abi.encodePacked(bytecode);
+        return abi.encodePacked(bytecode, abi.encode(address(this)));
     }
 
     function _afterTokenTransfer(

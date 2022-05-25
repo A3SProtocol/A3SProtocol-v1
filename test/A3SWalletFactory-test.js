@@ -1,17 +1,16 @@
 const { expect } = require("chai");
 
 describe("A3SWalletFactory Contract", () => {
-  // Wallet Conract Infos
   let A3SWalletFactory;
   let factory;
   let tokenId;
   let walletAddress;
   let provider;
-  let owner, user1, user2, users;
+  let owner, user1, user2;
 
   beforeEach(async () => {
     provider = waffle.provider;
-    [owner, user1, user2, ...users] = await ethers.getSigners();
+    [owner, user1, user2] = await ethers.getSigners();
     A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory");
     factory = await A3SWalletFactory.deploy("A3SProtocol", "A3S");
 

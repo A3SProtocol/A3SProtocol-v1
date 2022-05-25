@@ -24,6 +24,10 @@ contract A3SWallet is ERC721Holder {
         _;
     }
 
+    constructor(address factoryAddress) {
+        _factory = factoryAddress;
+    }
+
     receive() external payable {}
 
     /**
@@ -46,5 +50,12 @@ contract A3SWallet is ERC721Holder {
      */
     function factory() external view returns (address) {
         return _factory;
+    }
+
+    /**
+     * @dev Returns the owner of the wallet from WalletFactory.
+     */
+    function ownerOf() external view returns (address) {
+        return IA3SWalletFactory(_factory).walletOwnerOf(address(this));
     }
 }
