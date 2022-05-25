@@ -6,13 +6,15 @@ import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 
 import "./IA3SWalletFactory.sol";
-import "./AS3Wallet.sol";
+import "./A3SWallet.sol";
+
+import "hardhat/console.sol";
 
 contract A3SWalletFactory is ERC721, IA3SWalletFactory {
     using Counters for Counters.Counter;
 
     // Token ID counter
-    Counters.Counter private idCounter;
+    Counters.Counter private tokenIdCounter;
 
     // Mapping from token ID to wallet address
     mapping(uint256 => address) private _wallets;
@@ -35,28 +37,28 @@ contract A3SWalletFactory is ERC721, IA3SWalletFactory {
     /**
      * @dev See {IA3SWalletFactory-mintWallet}.
      */
-    function mintWallet(address to, bytes32 salt) public virtual override {
-        idCounter.increment();
+    function mintWallet(address to, bytes32 salt) external virtual override {
+        tokenIdCounter.increment();
         uint256 amount = 0;
-        uint256 newId = idCounter.current();
+        uint256 newTokenId = tokenIdCounter.current();
 
         bytes memory walletByteCode = _walletBytecode();
-        address newAddr = Create2.deploy(amount, salt, walletByteCode);
+        address newWallet = Create2.deploy(amount, salt, walletByteCode);
 
-        _mint(to, newId);
+        _mint(to, newTokenId);
 
-        _wallets[newId] = newAddr;
-        _walletsId[newAddr] = newId;
-        _walletsOwner[newAddr] = to;
+        _wallets[newTokenId] = newWallet;
+        _walletsId[newWallet] = newTokenId;
+        _walletsOwner[newWallet] = to;
 
-        emit MintWallet(_to, _salt);
+        emit MintWallet(to, salt, newWallet, newTokenId);
     }
 
     /**
      * @dev See {IA3SWalletFactory-walletOf}.
      */
     function walletOf(uint256 tokenId)
-        public
+        external
         view
         virtual
         override
@@ -74,7 +76,7 @@ contract A3SWalletFactory is ERC721, IA3SWalletFactory {
      * @dev See {IA3SWalletFactory-walletIdOf}.
      */
     function walletIdOf(address wallet)
-        public
+        external
         view
         virtual
         override
@@ -92,14 +94,17 @@ contract A3SWalletFactory is ERC721, IA3SWalletFactory {
      * @dev See {IA3SWalletFactory-walletOwnerOf}.
      */
     function walletOwnerOf(address wallet)
-        public
+        external
         view
         virtual
         override
         returns (address)
     {
         address owner = _walletsOwner[wallet];
-        require(owner != 0, "A3SProtocol: Owner query for nonexistent wallet");
+        require(
+            owner != address(0),
+            "A3SProtocol: Owner query for nonexistent wallet"
+        );
         return owner;
     }
 
@@ -107,7 +112,7 @@ contract A3SWalletFactory is ERC721, IA3SWalletFactory {
      * @dev See {IA3SWalletFactory-predictWalletAddress}.
      */
     function predictWalletAddress(bytes32 salt)
-        public
+        external
         view
         virtual
         override
@@ -119,8 +124,21 @@ contract A3SWalletFactory is ERC721, IA3SWalletFactory {
     /**
      * @dev Returns bytecode of A3SWallet contract.
      */
-    function _walletBytecode() internal returns (bytes memory) {
+    function _walletBytecode() internal pure returns (bytes memory) {
         bytes memory bytecode = type(A3SWallet).creationCode;
         return abi.encodePacked(bytecode);
+    }
+
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 tokenId
+    ) internal virtual override {
+        super._afterTokenTransfer(from, to, tokenId);
+
+        if (from != address(0) && to != address(0)) {
+            address wallet = _wallets[tokenId];
+            _walletsOwner[wallet] = to;
+        }
     }
 }
