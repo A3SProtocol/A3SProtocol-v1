@@ -64,7 +64,6 @@ contract WalletManager is ERC721 {
     {
         bytes memory bytecode = type(Wallet).creationCode;
         return abi.encodePacked(bytecode, abi.encode(address(_to))); // 不確定 abi.encode(address(this))
-        // return bytecode;
     }
 
     function walletAddressWithSalt(bytes32 _salt, address _to)
@@ -75,8 +74,6 @@ contract WalletManager is ERC721 {
         return
             Create2.computeAddress(_salt, keccak256(_getWalletBytecode(_to)));
     }
-
-    // function ownerOfWallet() {}
 
     function walletAddressOf(uint256 _tokenId) external view returns (address) {
         return walletAddresses[_tokenId];
