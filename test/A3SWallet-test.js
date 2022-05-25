@@ -33,9 +33,8 @@ describe("A3SWallet Contract", () => {
   });
 
   it("GeneralCall: Can call General Call", async () => {
-    let contractAdress = factory.address;
-
     //factory.walletOwnerOf
+    let contractAdress = factory.address;
     let payload = hre.web3.eth.abi.encodeFunctionCall(
       {
         name: "walletOwnerOf",
@@ -54,4 +53,6 @@ describe("A3SWallet Contract", () => {
 
     console.log(result);
   });
+
+  it("GeneralCall: Should failed (call by non-owner)", async () => {});
 });
