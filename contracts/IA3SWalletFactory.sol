@@ -2,6 +2,7 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/ownership/Ownable.sol";
 
 interface IA3SWalletFactory is IERC721 {
     /**
@@ -12,6 +13,15 @@ interface IA3SWalletFactory is IERC721 {
         bytes32 indexed salt,
         address wallet,
         uint256 tokenId
+    );
+
+    /**
+     * @dev Emitted when successfully trasfered batch of `tokens` from `from` to `to`
+     */
+    event BatchTransferFrom(
+        address indexed from,
+        address indexed to,
+        uint256[] tokens
     );
 
     /**

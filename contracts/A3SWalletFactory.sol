@@ -2,19 +2,26 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 
 import "./IA3SWalletFactory.sol";
 import "./A3SWallet.sol";
+import "./old/Empty.sol";
 
 import "hardhat/console.sol";
 
-contract A3SWalletFactory is ERC721, IA3SWalletFactory {
+contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     using Counters for Counters.Counter;
 
     // Token ID counter
     Counters.Counter private tokenIdCounter;
+
+    // Token for fees
+    address private _fiatToken;
+
+    uint256 private _fee;
 
     // Mapping from token ID to wallet address
     mapping(uint256 => address) private _wallets;
@@ -28,9 +35,9 @@ contract A3SWalletFactory is ERC721, IA3SWalletFactory {
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    constructor(string memory name, string memory symbol)
-        ERC721(name, symbol)
-    {}
+    constructor(string memory name, string memory symbol) ERC721(name, symbol) {
+        _fee = 0;
+    }
 
     receive() external payable {}
 
@@ -38,6 +45,8 @@ contract A3SWalletFactory is ERC721, IA3SWalletFactory {
      * @dev See {IA3SWalletFactory-mintWallet}.
      */
     function mintWallet(address to, bytes32 salt) external virtual override {
+        // IERC20(_fiatToken).transferFrom(msg.sender, address(this), _fee);
+
         tokenIdCounter.increment();
         uint256 amount = 0;
         uint256 newTokenId = tokenIdCounter.current();
@@ -52,6 +61,91 @@ contract A3SWalletFactory is ERC721, IA3SWalletFactory {
         _walletsOwner[newWallet] = to;
 
         emit MintWallet(to, salt, newWallet, newTokenId);
+    }
+
+    /**
+     * @dev Transfer a batch of `tokens` from `from` to `bo`
+     *
+     * Requirements:
+     *
+     * - msg.sender must be the owner or approved for every token in `tokens`
+     * - every token in `tokens` must belongs to `from`.
+     * - `to` cannot be the zero address.
+     *
+     * Emits a {MintWallet} event.
+     */
+    function batchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory tokens
+    ) external {
+        uint256 balance = _balances[from];
+        require(balance < tokens.length, "Not enough tokens");
+
+        for (uint256 i = 0; i < tokens.length; ++i) {
+            uint256 tokenId = tokens[i];
+            address owner = _owners[tokenId];
+
+            require(
+                _isApprovedOrOwner(_msgSender(), tokenId),
+                "A3SProtocol: transfer caller is not owner nor approved"
+            );
+            require(
+                from == owner,
+                "A3SProtocol: transfer from incorrect owner"
+            );
+            require(
+                to != address(0),
+                "A3SProtocol: transfer to the zero address"
+            );
+
+            _approve(address(0), tokenId);
+            _owners[tokenId] = to;
+        }
+
+        _balances[from] -= tokens.length;
+        _balances[to] += tokens.length;
+
+        emit BatchTransferFrom(from, to, tokens)
+    }
+
+    /**
+     * @dev Update fiat token for fees to `token`
+     */
+    function updateFiatToken(address token) public onlyOwner {
+        _fiatToken = token;
+    }
+
+    /**
+     * @dev Withdraw `amount` of ether to the _owner
+     */
+    function withdrawEther(uint256 amount) public onlyOwner {
+        uint256 balance = address(this).balance;
+        require(amount <= balance, "Not enough ether");
+        address(_owner).transfer(amount);
+    }
+
+    /**
+     * @dev Withdraw `amount` of fiat token to the _owner
+     */
+    function withdrawToken(uint256 amount) public onlyOwner {
+        uint256 balance = IERC20(_fiatToken).balanceOf(address(this));
+        require(amount <= balance, "Not enough token");
+        IERC20(_fiatToken).transfer(_owner, amount);
+    }
+
+    /**
+     * @dev Returns the fiat token for fees
+     */
+    function fiatToken() external view returns (address) {
+        return _fiatToken;
+    }
+
+    /**
+     * @dev Returns the amount of the fee
+     */
+    function fee() external view returns (uint256) {
+        return _fee;
     }
 
     /**

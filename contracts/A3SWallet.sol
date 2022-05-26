@@ -58,8 +58,4 @@ contract A3SWallet is ERC721Holder {
     function ownerOf() external view returns (address) {
         return IA3SWalletFactory(_factory).walletOwnerOf(address(this));
     }
-
-    function testAbiEncodeWithSignature() external view returns (bytes memory) {
-        return abi.encodeWithSignature("transfer(address)", address(this));
-    }
 }
