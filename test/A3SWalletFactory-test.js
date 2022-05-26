@@ -110,4 +110,28 @@ describe("A3SWalletFactory Contract", () => {
       )
     ).not.to.equal(walletAddress);
   });
+
+  it("BatchTansferFrom: Should send tow tokens at a same time", async () => {
+    await factory.mintWallet(
+      user1.address,
+      hre.ethers.utils.formatBytes32String("1")
+    );
+
+    let tokens = [1, 2];
+
+    await factory
+      .connect(user1)
+      .batchTransferFrom(user1.address, user2.address, tokens);
+
+    let secondWalletAddress = await factory.walletOf(tokens[1]);
+
+    expect(await factory.balanceOf(user1.address)).to.equal(0);
+    expect(await factory.balanceOf(user2.address)).to.equal(2);
+    expect(await factory.ownerOf(tokens[0])).to.equal(user2.address);
+    expect(await factory.ownerOf(tokens[1])).to.equal(user2.address);
+    expect(await factory.walletOwnerOf(walletAddress)).to.equal(user2.address);
+    expect(await factory.walletOwnerOf(secondWalletAddress)).to.equal(
+      user2.address
+    );
+  });
 });

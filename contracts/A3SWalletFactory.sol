@@ -3,6 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 import "@openzeppelin/contracts/utils/Create2.sol";
 
@@ -19,7 +20,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     Counters.Counter private tokenIdCounter;
 
     // Token for fees
-    address private _fiatToke
+    address private _fiatToken;
 
     uint256 private _fee;
 
@@ -79,34 +80,16 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
         address to,
         uint256[] memory tokens
     ) external {
-        uint256 balance = _balances[from];
-        require(balance < tokens.length, "Not enough tokens");
+        uint256 balance = balanceOf(from);
+
+        require(tokens.length <= balance, "Not enough tokens");
 
         for (uint256 i = 0; i < tokens.length; ++i) {
             uint256 tokenId = tokens[i];
-            address owner = _owners[tokenId];
-
-            require(
-                _isApprovedOrOwner(_msgSender(), tokenId),
-                "A3SProtocol: transfer caller is not owner nor approved"
-            );
-            require(
-                from == owner,
-                "A3SProtocol: transfer from incorrect owner"
-            );
-            require(
-                to != address(0),
-                "A3SProtocol: transfer to the zero address"
-            );
-
-            _approve(address(0), tokenId);
-            _owners[tokenId] = to;
+            transferFrom(from, to, tokenId);
         }
 
-        _balances[from] -= tokens.length;
-        _balances[to] += tokens.length;
-
-        emit BatchTransferFrom(from, to, tokens)
+        emit BatchTransferFrom(from, to, tokens);
     }
 
     /**
@@ -122,7 +105,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     function withdrawEther(uint256 amount) public onlyOwner {
         uint256 balance = address(this).balance;
         require(amount <= balance, "Not enough ether");
-        address(_owner).transfer(amount);
+        payable(address(owner())).transfer(amount);
     }
 
     /**
@@ -131,7 +114,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     function withdrawToken(uint256 amount) public onlyOwner {
         uint256 balance = IERC20(_fiatToken).balanceOf(address(this));
         require(amount <= balance, "Not enough token");
-        IERC20(_fiatToken).transfer(_owner, amount);
+        IERC20(_fiatToken).transfer(owner(), amount);
     }
 
     /**
