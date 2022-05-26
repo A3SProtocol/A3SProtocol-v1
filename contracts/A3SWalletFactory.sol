@@ -19,7 +19,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     Counters.Counter private tokenIdCounter;
 
     // Token for fees
-    address private _fiatToken;
+    address private _fiatToke
 
     uint256 private _fee;
 
