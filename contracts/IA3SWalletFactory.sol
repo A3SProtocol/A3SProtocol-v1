@@ -35,7 +35,11 @@ interface IA3SWalletFactory is IERC721 {
      *
      * Emits a {MintWallet} event.
      */
-    function mintWallet(address to, bytes32 salt) external;
+    function mintWallet(
+        address to,
+        bytes32 salt,
+        bool useFiatToken
+    ) external;
 
     /**
      * @dev Transfer a batch of `tokens` from `from` to `bo`
