@@ -3,8 +3,8 @@ require("dotenv").config();
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-web3");
-// require("hardhat-gas-reporter");
-// require("solidity-coverage");
+require("hardhat-gas-reporter");
+require("solidity-coverage");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -32,8 +32,8 @@ module.exports = {
     },
   },
   gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
-    currency: "USD",
+    // enabled: process.env.REPORT_GAS !== undefined,
+    // currency: "USD",
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY,
