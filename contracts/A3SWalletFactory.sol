@@ -47,7 +47,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
      * @dev See {IA3SWalletFactory-mintWallet}.
      */
     function mintWallet(address to, bytes32 salt) external virtual override {
-        // IERC20(_fiatToken).transferFrom(msg.sender, address(this), _fee);
+        IERC20(_fiatToken).transferFrom(msg.sender, address(this), _fee);
 
         tokenIdCounter.increment();
         uint256 amount = 0;
