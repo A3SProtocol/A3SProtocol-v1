@@ -107,6 +107,13 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     }
 
     /**
+     * @dev Update ether fees for mint a wallet
+     */
+    function updateEtherFee(uint256 amount) public onlyOwner {
+        _etherFee = amount;
+    }
+
+    /**
      * @dev Withdraw `amount` of ether to the _owner
      */
     function withdrawEther(uint256 amount) public onlyOwner {
