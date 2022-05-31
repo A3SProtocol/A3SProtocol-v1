@@ -25,6 +25,7 @@ interface IA3SWalletFactory is IERC721 {
 
     /**
      * @dev Mints `tokenId`, creates a A3SWallet, and assign the token to `to`.
+     *      Need to charge fees with ether or fait token decided by `useFiatToken`
      *
      * WARNING: We do not
      *
@@ -32,10 +33,15 @@ interface IA3SWalletFactory is IERC721 {
      *
      * - `tokenId` must not exist.
      * - `to` cannot be the zero address.
+     * - fiat token must not be address zero when `useFiatToken` is true
      *
      * Emits a {MintWallet} event.
      */
-    function mintWallet(address to, bytes32 salt) external;
+    function mintWallet(
+        address to,
+        bytes32 salt,
+        bool useFiatToken
+    ) external payable;
 
     /**
      * @dev Transfer a batch of `tokens` from `from` to `bo`

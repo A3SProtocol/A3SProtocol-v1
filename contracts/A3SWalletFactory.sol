@@ -9,9 +9,6 @@ import "@openzeppelin/contracts/utils/Create2.sol";
 
 import "./IA3SWalletFactory.sol";
 import "./A3SWallet.sol";
-import "./old/Empty.sol";
-
-import "hardhat/console.sol";
 
 contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     using Counters for Counters.Counter;
@@ -22,8 +19,11 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     // Token for fees
     address private _fiatToken;
 
-    // Number fo fees
-    uint256 private _fee;
+    // Number of fiat tokens to mint a wallet
+    uint256 private _fiatTokenFee;
+
+    // Number of ether to mint a wallet
+    uint256 private _etherFee;
 
     // Mapping from token ID to wallet address
     mapping(uint256 => address) private _wallets;
@@ -38,7 +38,8 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
     constructor(string memory name, string memory symbol) ERC721(name, symbol) {
-        _fee = 0;
+        _fiatTokenFee = 0;
+        _etherFee = 0;
     }
 
     receive() external payable {}
@@ -46,8 +47,21 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     /**
      * @dev See {IA3SWalletFactory-mintWallet}.
      */
-    function mintWallet(address to, bytes32 salt) external virtual override {
-        IERC20(_fiatToken).transferFrom(msg.sender, address(this), _fee);
+    function mintWallet(
+        address to,
+        bytes32 salt,
+        bool useFiatToken
+    ) external payable virtual override {
+        if (useFiatToken) {
+            require(_fiatToken != address(0), "A3SProtocol: FiatToken not set");
+            IERC20(_fiatToken).transferFrom(
+                msg.sender,
+                address(this),
+                _fiatTokenFee
+            );
+        } else {
+            require(msg.value >= _etherFee, "A3SProtocol: Not enough ether");
+        }
 
         tokenIdCounter.increment();
         uint256 amount = 0;
@@ -121,7 +135,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
      * @dev Returns the amount of the fee
      */
     function fee() external view returns (uint256) {
-        return _fee;
+        return _fiatTokenFee;
     }
 
     /**

@@ -16,7 +16,8 @@ describe("A3SWalletFactory Contract", () => {
 
     await factory.mintWallet(
       user1.address,
-      hre.ethers.utils.formatBytes32String("0")
+      hre.ethers.utils.formatBytes32String("0"),
+      false
     );
 
     tokenId = 1;
@@ -32,7 +33,8 @@ describe("A3SWalletFactory Contract", () => {
   it("MintWallet: Can Mint a New Wallet", async () => {
     await factory.mintWallet(
       user1.address,
-      hre.ethers.utils.formatBytes32String("1")
+      hre.ethers.utils.formatBytes32String("1"),
+      false
     );
 
     let secondTokenId = 2;
@@ -114,7 +116,8 @@ describe("A3SWalletFactory Contract", () => {
   it("BatchTansferFrom: Should send tow tokens at a same time", async () => {
     await factory.mintWallet(
       user1.address,
-      hre.ethers.utils.formatBytes32String("1")
+      hre.ethers.utils.formatBytes32String("1"),
+      false
     );
 
     let tokens = [1, 2];
