@@ -38,7 +38,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
     constructor(string memory name, string memory symbol) ERC721(name, symbol) {
-        _fee = 0;
+        _fiatTokenFee = 0;
         _etherFee = 0;
     }
 
@@ -54,7 +54,11 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     ) external payable virtual override {
         if (useFiatToken) {
             require(_fiatToken != address(0), "A3SProtocol: FiatToken not set");
-            IERC20(_fiatToken).transferFrom(msg.sender, address(this), _fee);
+            IERC20(_fiatToken).transferFrom(
+                msg.sender,
+                address(this),
+                _fiatTokenFee
+            );
         } else {
             require(msg.value >= _etherFee, "A3SProtocol: Not enough ether");
         }
@@ -131,7 +135,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
      * @dev Returns the amount of the fee
      */
     function fee() external view returns (uint256) {
-        return _fee;
+        return _fiatTokenFee;
     }
 
     /**
