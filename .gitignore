@@ -3,6 +3,9 @@ node_modules
 coverage
 coverage.json
 typechain
+.env.example
+
+secret*.json
 
 #Hardhat files
 cache

@@ -22,6 +22,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     // Token for fees
     address private _fiatToken;
 
+    // Number fo fees
     uint256 private _fee;
 
     // Mapping from token ID to wallet address
@@ -65,15 +66,7 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     }
 
     /**
-     * @dev Transfer a batch of `tokens` from `from` to `bo`
-     *
-     * Requirements:
-     *
-     * - msg.sender must be the owner or approved for every token in `tokens`
-     * - every token in `tokens` must belongs to `from`.
-     * - `to` cannot be the zero address.
-     *
-     * Emits a {MintWallet} event.
+     * @dev See {IA3SWalletFactory-mintWallet}.
      */
     function batchTransferFrom(
         address from,

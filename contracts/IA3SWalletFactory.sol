@@ -38,6 +38,23 @@ interface IA3SWalletFactory is IERC721 {
     function mintWallet(address to, bytes32 salt) external;
 
     /**
+     * @dev Transfer a batch of `tokens` from `from` to `bo`
+     *
+     * Requirements:
+     *
+     * - msg.sender must be the owner or approved for every token in `tokens`
+     * - every token in `tokens` must belongs to `from`.
+     * - `to` cannot be the zero address.
+     *
+     * Emits a {MintWallet} event.
+     */
+    function batchTransferFrom(
+        address from,
+        address to,
+        uint256[] memory tokens
+    ) external;
+
+    /**
      * @dev Returns the wallet address of the `tokenId` Token
      *
      * Requirements:
