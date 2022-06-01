@@ -19,7 +19,8 @@ describe("A3SWallet Contract", () => {
 
     await factory.mintWallet(
       user1.address,
-      hre.ethers.utils.formatBytes32String("0")
+      hre.ethers.utils.formatBytes32String("0"),
+      false
     );
 
     tokenId = 1;
@@ -36,6 +37,42 @@ describe("A3SWallet Contract", () => {
     expect(wallet.address).to.have.length.above(0);
     expect(await wallet.factory()).to.equal(factory.address);
     expect(await wallet.ownerOf()).to.equal(user1.address);
+  });
+
+  it("Ehter: Can Send Ether", async () => {
+    await owner.sendTransaction({
+      to: wallet.address,
+      value: hre.ethers.utils.parseEther("1.0"),
+    });
+
+    await wallet
+      .connect(user1)
+      .transferEther(user2.address, hre.ethers.utils.parseEther("0.5"));
+
+    expect(await provider.getBalance(wallet.address)).to.equal(
+      hre.ethers.utils.parseEther("0.5")
+    );
+
+    expect(await provider.getBalance(user2.address)).to.equal(
+      hre.ethers.utils.parseEther("10000.5") // default every user contain 10000 ehter
+    );
+  });
+
+  it("Ehter: Failed to Send Ether (only wallet owner)", async () => {
+    await owner.sendTransaction({
+      to: wallet.address,
+      value: hre.ethers.utils.parseEther("1.0"),
+    });
+
+    try {
+      await wallet.transferEther(
+        user2.address,
+        hre.ethers.utils.parseEther("0.5")
+      );
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Caller is not owner");
+    }
   });
 
   it("GeneralCall: Can call General Call", async () => {
