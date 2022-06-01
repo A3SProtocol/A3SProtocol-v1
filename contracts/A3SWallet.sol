@@ -9,6 +9,11 @@ contract A3SWallet is ERC721Holder {
     address private _factory;
 
     /**
+     * @dev Emitted when succeed when transfer `amount` of ethers to `to`
+     */
+    event TransferEther(address indexed to, uint256 amount);
+
+    /**
      * @dev Emitted when succeed use low level call to `contracAddress` with precalculated `payload`
      */
     event GeneralCall(address indexed contracAddress, bytes indexed payload);
@@ -29,6 +34,18 @@ contract A3SWallet is ERC721Holder {
     }
 
     receive() external payable {}
+
+    /**
+     * @dev Transfer `amount` of ethers to `to`
+     */
+    function transferEther(address to, uint256 amount) public onlyOwner {
+        uint256 balance = address(this).balance;
+        require(amount <= balance, "Not enough ether");
+
+        payable(to).transfer(amount);
+
+        emit TransferEther(to, amount);
+    }
 
     /**
      * @dev Returns the output bytes data from low level call to `contracAddress` with precalculated `payload`
