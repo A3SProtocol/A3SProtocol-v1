@@ -14,9 +14,9 @@ contract A3SWallet is ERC721Holder {
     event TransferEther(address indexed to, uint256 amount);
 
     /**
-     * @dev Emitted when succeed use low level call to `contracAddress` with precalculated `payload`
+     * @dev Emitted when succeed use low level call to `contractAddress` with precalculated `payload`
      */
-    event GeneralCall(address indexed contracAddress, bytes indexed payload);
+    event GeneralCall(address indexed contractAddress, bytes indexed payload);
 
     /**
      * @dev Throws if called by any account other than the owner recorded in the factory.
@@ -48,14 +48,14 @@ contract A3SWallet is ERC721Holder {
     }
 
     /**
-     * @dev Returns the output bytes data from low level call to `contracAddress` with precalculated `payload`
+     * @dev Returns the output bytes data from low level call to `contractAddress` with precalculated `payload`
      */
-    function generalCall(address contracAddress, bytes memory payload)
+    function generalCall(address contractAddress, bytes memory payload)
         public
         onlyOwner
         returns (bytes memory)
     {
-        (bool success, bytes memory returnData) = address(contracAddress).call(
+        (bool success, bytes memory returnData) = address(contractAddress).call(
             payload
         );
         require(success, "A3SProtocol: General call query failed.");

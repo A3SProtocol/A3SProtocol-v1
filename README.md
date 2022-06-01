@@ -1,42 +1,65 @@
-# Advanced Sample Hardhat Project
+# A3SProtocol
 
-This project demonstrates an advanced Hardhat use case, integrating other tools commonly used alongside Hardhat in the ecosystem.
+This repository contains A3SWalletFactory and A3SWallet smart contracts.
 
-The project comes with a sample contract, a test for that contract, a sample script that deploys that contract, and an example of a task implementation, which simply lists the available accounts. It also comes with a variety of other tools, preconfigured to work with the project code.
+## A3SWalletFactory
 
-Try running some of the following tasks:
+## A3SWallet
 
-```shell
-npx hardhat accounts
-npx hardhat compile
-npx hardhat clean
-npx hardhat test
-npx hardhat node
-npx hardhat help
-REPORT_GAS=true npx hardhat test
-npx hardhat coverage
-npx hardhat run scripts/deploy.js
-node scripts/deploy.js
-npx eslint '**/*.js'
-npx eslint '**/*.js' --fix
-npx prettier '**/*.{json,sol,md}' --check
-npx prettier '**/*.{json,sol,md}' --write
-npx solhint 'contracts/**/*.sol'
-npx solhint 'contracts/**/*.sol' --fix
+Our wallet provide two main functions, transferEther and generalCall.
+
+```
+contract A3SWallet {
+    ...
+    transferEther(address to, uint256 amount )
+
+    generalCall(address contractAddress, bytes memory payload)
+    ...
+}
 ```
 
-# Etherscan verification
+### transferEther
 
-To try out Etherscan verification, you first need to deploy a contract to an Ethereum network that's supported by Etherscan, such as Ropsten.
+Responsible for handling wallet transfers or withdrawals.
 
-In this project, copy the .env.example file to a file named .env, and then edit it to fill in the details. Enter your Etherscan API key, your Ropsten node URL (eg from Alchemy), and the private key of the account which will send the deployment transaction. With a valid .env file in place, first deploy your contract:
+### generalCall
 
-```shell
-hardhat run --network ropsten scripts/deploy.js
+Responsible for handling interactions with any other contract, the user must provide the target contract address and the corresponding function abi.
+
+The contract functino abi can be calculated by [web3.eth.abi.encodeFunctionCall](https://web3js.readthedocs.io/en/v1.2.11/web3-eth-abi.html#encodefunctioncall) from [web3js](https://github.com/ChainSafe/web3.js)
+
+Example:
+
+```
+    // ERC20 transfer funcion abi example
+    let payload = await hre.web3.eth.abi.encodeFunctionCall(
+      {
+        name: "transfer",
+        type: "function",
+        inputs: [
+          {
+            type: "address",
+            name: "to",
+          },
+          {
+            type: "uint256",
+            name: "amount",
+          },
+        ],
+        outputs: [
+          {
+            type: "bool",
+            name: "nopr",
+          },
+        ],
+      },
+      [address, "20"]
+    );
 ```
 
-Then, copy the deployment address and paste it in to replace `DEPLOYED_CONTRACT_ADDRESS` in this command:
+## Follow us
 
-```shell
-npx hardhat verify --network ropsten DEPLOYED_CONTRACT_ADDRESS "Hello, Hardhat!"
-```
+- [Website](https://www.a3sprotocol.xyz/)
+- [Twitter](https://twitter.com/A3SProtocol)
+- [Discord](https://discord.gg/uhYdwgA7Vj)
+- [Medium](https://medium.com/@A3S_Protocol)
