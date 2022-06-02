@@ -107,6 +107,13 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     }
 
     /**
+     * @dev Update `amount` of fiat tokens to mint a wallet
+     */
+    function updateFiatTokenFee(uint256 amount) public onlyOwner {
+        _fiatTokenFee = amount;
+    }
+
+    /**
      * @dev Update ether fees for mint a wallet
      */
     function updateEtherFee(uint256 amount) public onlyOwner {
@@ -139,10 +146,17 @@ contract A3SWalletFactory is ERC721, Ownable, IA3SWalletFactory {
     }
 
     /**
-     * @dev Returns the amount of the fee
+     * @dev Returns the amount of fiat token fees
      */
-    function fee() external view returns (uint256) {
+    function fiatTokenFee() external view returns (uint256) {
         return _fiatTokenFee;
+    }
+
+    /**
+     * @dev Returns the amount of ether fees
+     */
+    function etherFee() external view returns (uint256) {
+        return _etherFee;
     }
 
     /**

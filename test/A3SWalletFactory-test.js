@@ -6,6 +6,8 @@ describe("A3SWalletFactory Contract", () => {
   let tokenId;
   let walletAddress;
   let provider;
+  let Erc20Token;
+  let erc20Token;
   let owner, user1, user2;
 
   beforeEach(async () => {
@@ -22,6 +24,10 @@ describe("A3SWalletFactory Contract", () => {
 
     tokenId = 1;
     walletAddress = await factory.walletOf(tokenId);
+
+    Erc20Token = await hre.ethers.getContractFactory("TestToken");
+    erc20Token = await Erc20Token.deploy();
+    await erc20Token.mint(owner.address, 100);
   });
 
   it("Deployment: Can Deploy A3SWalletFactory Contract", async () => {
@@ -30,15 +36,61 @@ describe("A3SWalletFactory Contract", () => {
     expect(await factory.symbol()).to.equal("A3S");
   });
 
-  it("MintWallet: Can Mint a New Wallet", async () => {
+  it("FaitToken: Can update fiat token address", async () => {
+    await factory.updateFiatToken(erc20Token.address);
+    expect(await factory.fiatToken()).to.equal(erc20Token.address);
+  });
+
+  it("FaitTokenFee: Can update fiat token fees", async () => {
+    const feeAmount = 10;
+    await factory.updateFiatTokenFee(feeAmount);
+    expect(await factory.fiatTokenFee()).to.equal(feeAmount);
+  });
+
+  it("EtherFee: Can update ether fees", async () => {
+    const feeAmount = 1;
+    await factory.updateEtherFee(feeAmount);
+    expect(await factory.etherFee()).to.equal(feeAmount);
+  });
+
+  it("MintWallet: Can Mint a New Wallet with ether fee", async () => {
+    await factory.updateEtherFee(1);
     await factory.mintWallet(
       user1.address,
       hre.ethers.utils.formatBytes32String("1"),
-      false
+      false,
+      { value: ethers.utils.parseEther("2.0") }
     );
 
     let secondTokenId = 2;
     let secondWalletAddress = await factory.walletOf(secondTokenId);
+
+    expect(await factory.ownerOf(secondTokenId)).to.equal(user1.address);
+    expect(await factory.walletIdOf(secondWalletAddress)).to.equal(
+      secondTokenId
+    );
+    expect(await factory.walletOwnerOf(secondWalletAddress)).to.equal(
+      user1.address
+    );
+    expect(await factory.balanceOf(user1.address)).to.equal(2);
+  });
+
+  it("MintWallet: Can Mint a New Wallet with fiat token fee", async () => {
+    await factory.updateFiatToken(erc20Token.address);
+    await factory.updateFiatTokenFee(10);
+    await erc20Token.approve(factory.address, 50);
+
+    await factory.mintWallet(
+      user1.address,
+      hre.ethers.utils.formatBytes32String("1"),
+      true
+    );
+
+    let secondTokenId = 2;
+    let secondWalletAddress = await factory.walletOf(secondTokenId);
+
+    expect(await erc20Token.balanceOf(factory.address)).to.equal(10);
+    expect(await erc20Token.balanceOf(owner.address)).to.equal(90);
 
     expect(await factory.ownerOf(secondTokenId)).to.equal(user1.address);
     expect(await factory.walletIdOf(secondWalletAddress)).to.equal(
