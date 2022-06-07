@@ -41,16 +41,45 @@ describe("A3SWalletFactory Contract", () => {
     expect(await factory.fiatToken()).to.equal(erc20Token.address);
   });
 
+  it("FaitToken: Should failed update fiat token address", async () => {
+    try {
+      await factory.connect(user1).updateFiatToken(erc20Token.address);
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Ownable: caller is not the owner");
+    }
+  });
+
   it("FaitTokenFee: Can update fiat token fees", async () => {
     const feeAmount = 10;
     await factory.updateFiatTokenFee(feeAmount);
     expect(await factory.fiatTokenFee()).to.equal(feeAmount);
   });
 
+  it("FaitTokenFee: Should failed update fiat token fees", async () => {
+    try {
+      const feeAmount = 10;
+      await factory.connect(user1).updateFiatTokenFee(feeAmount);
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Ownable: caller is not the owner");
+    }
+  });
+
   it("EtherFee: Can update ether fees", async () => {
     const feeAmount = 1;
     await factory.updateEtherFee(feeAmount);
     expect(await factory.etherFee()).to.equal(feeAmount);
+  });
+
+  it("EtherFee: Should failed update ether fees", async () => {
+    try {
+      const feeAmount = 1;
+      await factory.connect(user1).updateEtherFee(feeAmount);
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Ownable: caller is not the owner");
+    }
   });
 
   it("MintWallet: Can Mint a New Wallet with ether fee", async () => {
