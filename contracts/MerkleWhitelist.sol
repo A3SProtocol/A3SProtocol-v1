@@ -1,11 +1,14 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
+
 import "hardhat/console.sol";
 
-contract MerkleWhitelist is Ownable {
+contract MerkleWhitelist is Initializable, OwnableUpgradeable, UUPSUpgradeable {
     bytes32 private _rootHash;
     uint256 private _round = 1;
     bool private _isLimited;
@@ -16,7 +19,9 @@ contract MerkleWhitelist is Ownable {
 
     event Claim(address sender, uint256 round);
 
-    constructor() {}
+    function initialize() public initializer {
+        __Ownable_init();
+    }
 
     function updateRootHash(bytes32 merkleRootHash) external onlyOwner {
         _rootHash = merkleRootHash;
@@ -54,12 +59,7 @@ contract MerkleWhitelist is Ownable {
         returns (bool)
     {
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
-
-        console.logBytes32(_rootHash);
-        console.logBytes32(proof[0]);
-        console.logBytes32(proof[1]);
-
-        return MerkleProof.verify(proof, _rootHash, leaf);
+        return MerkleProofUpgradeable.verify(proof, _rootHash, leaf);
     }
 
     function claim(bytes32[] calldata proof) external {
@@ -67,4 +67,11 @@ contract MerkleWhitelist is Ownable {
         _calims[msg.sender] = _round;
         emit Claim(msg.sender, _round);
     }
+
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        virtual
+        override
+        onlyOwner
+    {}
 }

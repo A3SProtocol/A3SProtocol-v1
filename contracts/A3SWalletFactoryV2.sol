@@ -12,7 +12,7 @@ import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
 import "./IA3SWalletFactory.sol";
 import "./A3SWallet.sol";
 
-contract A3SWalletFactory is
+contract A3SWalletFactoryV2 is
     Initializable,
     ERC721Upgradeable,
     OwnableUpgradeable,
@@ -41,18 +41,6 @@ contract A3SWalletFactory is
 
     // Mapping from  wallet address to owner address
     mapping(address => address) private _walletsOwner;
-
-    /**
-     * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
-     */
-    function initialize(string memory name, string memory symbol)
-        public
-        initializer
-    {
-        __ERC721_init(name, symbol);
-        __Ownable_init();
-        // __UUPSUpgradeable_init()
-    }
 
     receive() external payable {}
 

@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const { ethers, upgrades } = require("hardhat");
 
 describe("A3SWalletFactory Contract", () => {
   let A3SWalletFactory;
@@ -13,8 +14,13 @@ describe("A3SWalletFactory Contract", () => {
   beforeEach(async () => {
     provider = waffle.provider;
     [owner, user1, user2] = await ethers.getSigners();
+
     A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory");
-    factory = await A3SWalletFactory.deploy("A3SProtocol", "A3S");
+    factory = await upgrades.deployProxy(A3SWalletFactory, [
+      "A3SProtocol",
+      "A3S",
+    ]);
+    await factory.deployed();
 
     await factory.mintWallet(
       user1.address,
@@ -34,6 +40,20 @@ describe("A3SWalletFactory Contract", () => {
     expect(factory.address).to.have.length.above(0);
     expect(await factory.name()).to.equal("A3SProtocol");
     expect(await factory.symbol()).to.equal("A3S");
+  });
+
+  it("Upgrade: Can upgrade contract with keeping old state", async () => {
+    const A3SWalletFactoryV2 = await ethers.getContractFactory(
+      "A3SWalletFactoryV2"
+    );
+    const factoryV2 = await upgrades.upgradeProxy(
+      factory.address,
+      A3SWalletFactoryV2
+    );
+
+    expect(await factory.name()).to.equal("A3SProtocol");
+    expect(await factory.symbol()).to.equal("A3S");
+    expect(await factory.balanceOf(user1.address)).to.equal(1);
   });
 
   it("FaitToken: Can update fiat token address", async () => {
