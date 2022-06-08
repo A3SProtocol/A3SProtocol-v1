@@ -41,7 +41,8 @@ interface IA3SWalletFactory is IERC721Upgradeable {
     function mintWallet(
         address to,
         bytes32 salt,
-        bool useFiatToken
+        bool useFiatToken,
+        bytes32[] calldata proof
     ) external payable;
 
     /**

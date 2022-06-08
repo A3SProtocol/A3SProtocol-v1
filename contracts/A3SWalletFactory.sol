@@ -11,13 +11,15 @@ import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
 
 import "./IA3SWalletFactory.sol";
 import "./A3SWallet.sol";
+import "./MerkleWhitelist.sol";
 
 contract A3SWalletFactory is
     Initializable,
     ERC721Upgradeable,
     OwnableUpgradeable,
     UUPSUpgradeable,
-    IA3SWalletFactory
+    IA3SWalletFactory,
+    MerkleWhitelist
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
@@ -62,8 +64,14 @@ contract A3SWalletFactory is
     function mintWallet(
         address to,
         bytes32 salt,
-        bool useFiatToken
+        bool useFiatToken,
+        bytes32[] calldata proof
     ) external payable virtual override {
+        if (isLimited()) {
+            require(isInWhitelist(proof), "");
+            require(!isCalimed(msg.sender), "");
+        }
+
         if (useFiatToken) {
             require(_fiatToken != address(0), "A3SProtocol: FiatToken not set");
             IERC20Upgradeable(_fiatToken).transferFrom(

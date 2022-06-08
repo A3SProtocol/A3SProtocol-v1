@@ -25,8 +25,7 @@ describe("A3SWalletFactory Contract", () => {
     await factory.mintWallet(
       user1.address,
       hre.ethers.utils.formatBytes32String("0"),
-      false,
-      [hre.ethers.utils.formatBytes32String("")]
+      false
     );
 
     tokenId = 1;
@@ -109,7 +108,6 @@ describe("A3SWalletFactory Contract", () => {
       user1.address,
       hre.ethers.utils.formatBytes32String("1"),
       false,
-      [hre.ethers.utils.formatBytes32String("")],
       { value: ethers.utils.parseEther("2.0") }
     );
 
@@ -134,8 +132,7 @@ describe("A3SWalletFactory Contract", () => {
     await factory.mintWallet(
       user1.address,
       hre.ethers.utils.formatBytes32String("1"),
-      true,
-      [hre.ethers.utils.formatBytes32String("")]
+      true
     );
 
     let secondTokenId = 2;
@@ -221,8 +218,7 @@ describe("A3SWalletFactory Contract", () => {
     await factory.mintWallet(
       user1.address,
       hre.ethers.utils.formatBytes32String("1"),
-      false,
-      [hre.ethers.utils.formatBytes32String("")]
+      false
     );
 
     let tokens = [1, 2];

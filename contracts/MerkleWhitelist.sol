@@ -1,16 +1,14 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/cryptography/MerkleProofUpgradeable.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
 import "hardhat/console.sol";
 
-contract MerkleWhitelist is Initializable, OwnableUpgradeable, UUPSUpgradeable {
+contract MerkleWhitelist is OwnableUpgradeable {
     bytes32 private _rootHash;
-    uint256 private _round = 1;
+    uint256 private _round;
     bool private _isLimited;
 
     mapping(address => uint256) private _calims;
@@ -19,37 +17,33 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable, UUPSUpgradeable {
 
     event Claim(address sender, uint256 round);
 
-    function initialize() public initializer {
-        __Ownable_init();
-    }
-
-    function updateRootHash(bytes32 merkleRootHash) external onlyOwner {
+    function updateRootHash(bytes32 merkleRootHash) public onlyOwner {
         _rootHash = merkleRootHash;
 
         emit UpdateMerkleRoot(merkleRootHash);
     }
 
-    function updateRound() external onlyOwner {
+    function updateRound() public onlyOwner {
         _round += 1;
     }
 
-    function updateIsLimited(bool limited) external onlyOwner {
+    function updateIsLimited(bool limited) public onlyOwner {
         _isLimited = limited;
     }
 
-    function rootHash() external view returns (bytes32) {
+    function rootHash() public view returns (bytes32) {
         return _rootHash;
     }
 
-    function round() external view returns (uint256) {
+    function round() public view returns (uint256) {
         return _round;
     }
 
-    function isLimited() external view returns (bool) {
+    function isLimited() public view returns (bool) {
         return _isLimited;
     }
 
-    function isCalimed(address account) external view returns (bool) {
+    function isCalimed(address account) public view returns (bool) {
         return _calims[account] == _round;
     }
 
@@ -59,19 +53,12 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable, UUPSUpgradeable {
         returns (bool)
     {
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
-        return MerkleProofUpgradeable.verify(proof, _rootHash, leaf);
+        return MerkleProof.verify(proof, _rootHash, leaf);
     }
 
-    function claim(bytes32[] calldata proof) external {
+    function claim(bytes32[] calldata proof) public {
         require(isInWhitelist(proof), "MerkleWhitelist: Not in the whitelist");
         _calims[msg.sender] = _round;
         emit Claim(msg.sender, _round);
     }
-
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        virtual
-        override
-        onlyOwner
-    {}
 }
