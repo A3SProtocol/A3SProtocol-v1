@@ -72,6 +72,8 @@ contract A3SWalletFactory is
             require(!isCalimed(msg.sender), "");
         }
 
+        _claim();
+
         if (useFiatToken) {
             require(_fiatToken != address(0), "A3SProtocol: FiatToken not set");
             IERC20Upgradeable(_fiatToken).transferFrom(
@@ -87,11 +89,10 @@ contract A3SWalletFactory is
         uint256 amount = 0;
         uint256 newTokenId = tokenIdCounter.current();
 
-        bytes memory walletByteCode = _walletBytecode();
         address newWallet = Create2Upgradeable.deploy(
             amount,
             salt,
-            walletByteCode
+            _walletBytecode()
         );
 
         _mint(to, newTokenId);

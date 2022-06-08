@@ -56,8 +56,7 @@ contract MerkleWhitelist is OwnableUpgradeable {
         return MerkleProof.verify(proof, _rootHash, leaf);
     }
 
-    function claim(bytes32[] calldata proof) public {
-        require(isInWhitelist(proof), "MerkleWhitelist: Not in the whitelist");
+    function _claim() internal {
         _calims[msg.sender] = _round;
         emit Claim(msg.sender, _round);
     }
