@@ -92,7 +92,7 @@ contract A3SWalletFactoryV2 is
     function batchTransferFrom(
         address from,
         address to,
-        uint256[] memory tokens
+        uint256[] calldata tokens
     ) external {
         uint256 balance = balanceOf(from);
 

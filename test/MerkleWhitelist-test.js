@@ -12,8 +12,12 @@ describe("MerkleWhitelist Contract", () => {
   beforeEach(async () => {
     provider = waffle.provider;
     [owner, user1, user2] = await ethers.getSigners();
+
+    // MerkleWhitelist = await hre.ethers.getContractFactory("MerkleWhitelist");
+    // merkleWhitelist = await MerkleWhitelist.deploy();
+
     MerkleWhitelist = await hre.ethers.getContractFactory("MerkleWhitelist");
-    merkleWhitelist = await MerkleWhitelist.deploy();
+    merkleWhitelist = await upgrades.deployProxy(MerkleWhitelist);
   });
 
   it("Deployment: Can Deploy MerkleWhitelist Contract", async () => {
@@ -21,7 +25,7 @@ describe("MerkleWhitelist Contract", () => {
     expect(await merkleWhitelist.rootHash()).to.equal(
       await hre.ethers.utils.formatBytes32String("")
     );
-    expect(await merkleWhitelist.round()).to.equal(1);
+    expect(await merkleWhitelist.round()).to.equal(0);
     expect(await merkleWhitelist.isLimited()).to.equal(false);
   });
 
@@ -45,7 +49,7 @@ describe("MerkleWhitelist Contract", () => {
 
   it("UpdateRound: Can update round", async () => {
     await merkleWhitelist.updateRound();
-    expect(await merkleWhitelist.round()).to.equal(2);
+    expect(await merkleWhitelist.round()).to.equal(1);
   });
 
   it("UpdateRound: Should failed to update round", async () => {

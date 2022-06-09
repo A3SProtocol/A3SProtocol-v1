@@ -6,7 +6,7 @@ import "./IA3SWalletFactory.sol";
 
 contract A3SWallet is ERC721Holder {
     // Factory Address
-    address private _factory;
+    address public immutable factory;
 
     /**
      * @dev Emitted when succeed when transfer `amount` of ethers to `to`
@@ -22,15 +22,12 @@ contract A3SWallet is ERC721Holder {
      * @dev Throws if called by any account other than the owner recorded in the factory.
      */
     modifier onlyOwner() {
-        address owner = IA3SWalletFactory(_factory).walletOwnerOf(
-            address(this)
-        );
-        require(msg.sender == owner, "Caller is not owner");
+        require(msg.sender == ownerOf(), "Caller is not owner");
         _;
     }
 
     constructor(address factoryAddress) {
-        _factory = factoryAddress;
+        factory = factoryAddress;
     }
 
     receive() external payable {}
@@ -39,8 +36,7 @@ contract A3SWallet is ERC721Holder {
      * @dev Transfer `amount` of ethers to `to`
      */
     function transferEther(address to, uint256 amount) public onlyOwner {
-        uint256 balance = address(this).balance;
-        require(amount <= balance, "Not enough ether");
+        require(amount <= address(this).balance, "Not enough ether");
 
         payable(to).transfer(amount);
 
@@ -50,7 +46,7 @@ contract A3SWallet is ERC721Holder {
     /**
      * @dev Returns the output bytes data from low level call to `contractAddress` with precalculated `payload`
      */
-    function generalCall(address contractAddress, bytes memory payload)
+    function generalCall(address contractAddress, bytes calldata payload)
         public
         onlyOwner
         returns (bytes memory)
@@ -63,16 +59,9 @@ contract A3SWallet is ERC721Holder {
     }
 
     /**
-     * @dev Returns factory address.
-     */
-    function factory() external view returns (address) {
-        return _factory;
-    }
-
-    /**
      * @dev Returns the owner of the wallet from WalletFactory.
      */
-    function ownerOf() external view returns (address) {
-        return IA3SWalletFactory(_factory).walletOwnerOf(address(this));
+    function ownerOf() public view returns (address) {
+        return IA3SWalletFactory(factory).walletOwnerOf(address(this));
     }
 }

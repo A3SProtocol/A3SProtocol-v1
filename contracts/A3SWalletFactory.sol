@@ -53,7 +53,6 @@ contract A3SWalletFactory is
     {
         __ERC721_init(name, symbol);
         __Ownable_init();
-        // __UUPSUpgradeable_init()
     }
 
     receive() external payable {}
@@ -67,12 +66,7 @@ contract A3SWalletFactory is
         bool useFiatToken,
         bytes32[] calldata proof
     ) external payable virtual override {
-        if (isLimited()) {
-            require(isInWhitelist(proof), "");
-            require(!isCalimed(msg.sender), "");
-        }
-
-        _claim();
+        _claimWhitelist(proof);
 
         if (useFiatToken) {
             require(_fiatToken != address(0), "A3SProtocol: FiatToken not set");
@@ -110,11 +104,9 @@ contract A3SWalletFactory is
     function batchTransferFrom(
         address from,
         address to,
-        uint256[] memory tokens
+        uint256[] calldata tokens
     ) external {
-        uint256 balance = balanceOf(from);
-
-        require(tokens.length <= balance, "Not enough tokens");
+        require(tokens.length <= balanceOf(from), "Not enough tokens");
 
         for (uint256 i = 0; i < tokens.length; ++i) {
             uint256 tokenId = tokens[i];
@@ -149,8 +141,7 @@ contract A3SWalletFactory is
      * @dev Withdraw `amount` of ether to the _owner
      */
     function withdrawEther(uint256 amount) public onlyOwner {
-        uint256 balance = address(this).balance;
-        require(amount <= balance, "Not enough ether");
+        require(amount <= address(this).balance, "Not enough ether");
         payable(address(owner())).transfer(amount);
     }
 

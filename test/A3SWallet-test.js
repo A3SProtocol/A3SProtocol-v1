@@ -15,12 +15,16 @@ describe("A3SWallet Contract", () => {
     provider = waffle.provider;
     [owner, user1, user2] = await ethers.getSigners();
     A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory");
-    factory = await A3SWalletFactory.deploy("A3SProtocol", "A3S");
+    factory = await upgrades.deployProxy(A3SWalletFactory, [
+      "A3SProtocol",
+      "A3S",
+    ]);
 
     await factory.mintWallet(
       user1.address,
       hre.ethers.utils.formatBytes32String("0"),
-      false
+      false,
+      [hre.ethers.utils.formatBytes32String("")]
     );
 
     tokenId = 1;

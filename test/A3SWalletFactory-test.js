@@ -20,7 +20,6 @@ describe("A3SWalletFactory Contract", () => {
       "A3SProtocol",
       "A3S",
     ]);
-    await factory.deployed();
 
     await factory.mintWallet(
       user1.address,

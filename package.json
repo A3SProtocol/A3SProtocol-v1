@@ -3,6 +3,7 @@
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.6",
     "@nomiclabs/hardhat-etherscan": "^3.0.3",
+    "@nomiclabs/hardhat-ganache": "^2.0.1",
     "@nomiclabs/hardhat-waffle": "^2.0.3",
     "@nomiclabs/hardhat-web3": "^2.0.0",
     "chai": "^4.3.6",
@@ -29,6 +30,7 @@
     "@openzeppelin/contracts-upgradeable": "^4.6.0",
     "@openzeppelin/hardhat-upgrades": "^1.18.1",
     "@types/crypto-js": "^4.1.1",
+    "hardhat-contract-sizer": "^2.5.1",
     "keccak256": "^1.0.6",
     "merkletreejs": "^0.2.31"
   }

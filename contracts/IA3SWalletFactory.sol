@@ -59,7 +59,7 @@ interface IA3SWalletFactory is IERC721Upgradeable {
     function batchTransferFrom(
         address from,
         address to,
-        uint256[] memory tokens
+        uint256[] calldata tokens
     ) external;
 
     /**
