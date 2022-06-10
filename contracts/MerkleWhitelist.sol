@@ -11,7 +11,7 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
     bool public isLimited;
     bool public isPaused;
 
-    mapping(address => uint256) public _claimedWhitelist;
+    mapping(address => uint256) public claimedWhitelist;
 
     event UpdateMerkleRoot(bytes32 rootHash);
 
@@ -51,11 +51,11 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
             );
 
             require(
-                _claimedWhitelist[msg.sender] != round,
+                claimedWhitelist[msg.sender] != round,
                 "MerkleWhitelist: Account can not calim whitelist twice"
             );
 
-            _claimedWhitelist[msg.sender] = round;
+            claimedWhitelist[msg.sender] = round;
             emit ClaimWhitelist(msg.sender, round);
         }
     }
@@ -70,7 +70,7 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
         if (!isPaused) {
             if (isLimited) {
                 if (proveWhitelisted(owner, proof)) {
-                    if (_claimedWhitelist[msg.sender] != round) {
+                    if (claimedWhitelist[msg.sender] != round) {
                         status = 1;
                     }
                 }

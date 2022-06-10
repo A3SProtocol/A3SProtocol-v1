@@ -48,7 +48,7 @@ describe("A3SWallet Contract", () => {
 
     await wallet
       .connect(user1)
-      .transferEther(user2.address, hre.ethers.utils.parseEther("0.5"));
+      .generalCall(user2.address, "0x00", hre.ethers.utils.parseEther("0.5"));
 
     expect(await provider.getBalance(wallet.address)).to.equal(
       hre.ethers.utils.parseEther("0.5")
@@ -66,10 +66,12 @@ describe("A3SWallet Contract", () => {
     });
 
     try {
-      await wallet.transferEther(
+      await wallet.generalCall(
         user2.address,
+        "0x00",
         hre.ethers.utils.parseEther("0.5")
       );
+
       throw new Error("Dose not throw Error");
     } catch (e) {
       expect(e.message).includes("Caller is not owner");
@@ -102,7 +104,7 @@ describe("A3SWallet Contract", () => {
       [user2.address, "20"]
     );
 
-    await wallet.connect(user1).generalCall(contractAdress, payload);
+    await wallet.connect(user1).generalCall(contractAdress, payload, 0);
 
     expect(await erc20Token.balanceOf(wallet.address)).to.equal(80);
     expect(await erc20Token.balanceOf(user2.address)).to.equal(20);
@@ -135,7 +137,7 @@ describe("A3SWallet Contract", () => {
         [user2.address, "20"]
       );
 
-      await wallet.generalCall(contractAdress, payload);
+      await wallet.generalCall(contractAdress, payload, 0);
       throw new Error("Dose not throw Error");
     } catch (e) {
       expect(e.message).includes("Caller is not owner");

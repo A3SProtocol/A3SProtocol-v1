@@ -9,9 +9,9 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
 
-import "./IA3SWalletFactory.sol";
-import "./A3SWallet.sol";
-import "./MerkleWhitelist.sol";
+import "../IA3SWalletFactory.sol";
+import "../A3SWallet.sol";
+import "../MerkleWhitelist.sol";
 
 contract A3SWalletFactoryV2 is
     Initializable,

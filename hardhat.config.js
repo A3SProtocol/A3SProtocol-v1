@@ -46,10 +46,10 @@ module.exports = {
   etherscan: {
     apiKey: "",
   },
-  // contractSizer: {
-  //   alphaSort: true,
-  //   disambiguatePaths: false,
-  //   runOnCompile: true,
-  //   strict: true,
-  // },
+  contractSizer: {
+    alphaSort: true,
+    disambiguatePaths: false,
+    runOnCompile: true,
+    // strict: true,
+  },
 };
