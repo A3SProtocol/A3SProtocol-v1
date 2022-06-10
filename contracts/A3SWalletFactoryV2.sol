@@ -24,7 +24,9 @@ contract A3SWalletFactoryV2 is
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Token ID counter
-    CountersUpgradeable.Counter private tokenIdCounter;
+    CountersUpgradeable.Counter public tokenIdCounter;
+
+    string public baseTokenURI;
 
     // Token for fees
     address private _fiatToken;

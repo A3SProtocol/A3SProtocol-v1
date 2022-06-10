@@ -24,7 +24,9 @@ contract A3SWalletFactory is
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Token ID counter
-    CountersUpgradeable.Counter private tokenIdCounter;
+    CountersUpgradeable.Counter public tokenIdCounter;
+
+    string public baseTokenURI;
 
     // Token for fees
     address private _fiatToken;
@@ -47,11 +49,9 @@ contract A3SWalletFactory is
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    function initialize(string memory name, string memory symbol)
-        public
-        initializer
-    {
-        __ERC721_init(name, symbol);
+    function initialize(string calldata _uri) public initializer {
+        baseTokenURI = _uri;
+        __ERC721_init("A3SProtocol", "A3S");
         __Ownable_init();
     }
 
@@ -66,7 +66,7 @@ contract A3SWalletFactory is
         bool useFiatToken,
         bytes32[] calldata proof
     ) external payable virtual override returns (address) {
-        _claimWhitelist(proof);
+        _claimWhitelist(address(msg.sender), proof);
 
         if (useFiatToken) {
             require(_fiatToken != address(0), "A3SProtocol: FiatToken not set");
@@ -231,6 +231,22 @@ contract A3SWalletFactory is
             "A3SProtocol: Owner query for nonexistent wallet"
         );
         return owner;
+    }
+
+    function walletListOwnerOf(address owner)
+        public
+        view
+        returns (address[] memory)
+    {
+        address[] memory results = new address[](balanceOf(owner));
+        uint256 id = 1;
+        uint256 count = 0;
+        for (; id <= tokenIdCounter.current(); id++) {
+            _walletsOwner[_wallets[id]] == owner;
+            results[count] = _walletsOwner[_wallets[id]];
+        }
+
+        return results;
     }
 
     /**

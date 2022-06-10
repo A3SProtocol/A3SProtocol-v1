@@ -15,10 +15,7 @@ describe("A3SWallet Contract", () => {
     provider = waffle.provider;
     [owner, user1, user2] = await ethers.getSigners();
     A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory");
-    factory = await upgrades.deployProxy(A3SWalletFactory, [
-      "A3SProtocol",
-      "A3S",
-    ]);
+    factory = await upgrades.deployProxy(A3SWalletFactory, ["ipfs:/"]);
 
     await factory.mintWallet(
       user1.address,

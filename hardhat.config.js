@@ -31,12 +31,7 @@ module.exports = {
     hardhat: {
       allowUnlimitedContractSize: true,
     },
-    goerli: {
-      url: "https://eth-goerli.alchemyapi.io/v2/Dkm15Z-ZHOeDzTsWU-8Z06WNBgTAjRsz",
-      accounts: [
-        "0xef328e2a085f9fb13fdd6dc6bfa48b6aa5d5b262d4aacf84fed801763a4ab610",
-      ],
-    },
+
     ganache_test: {
       url: "HTTP://127.0.0.1:7545",
       chainId: 1337,
@@ -49,7 +44,7 @@ module.exports = {
     // currency: "USD",
   },
   etherscan: {
-    apiKey: "C7XMXYEDUQ2K4797E7UZPHKYZSVF37XA9M",
+    apiKey: "",
   },
   // contractSizer: {
   //   alphaSort: true,

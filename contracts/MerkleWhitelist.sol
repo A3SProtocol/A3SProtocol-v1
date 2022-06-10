@@ -9,6 +9,7 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
     bytes32 public rootHash;
     uint256 public round;
     bool public isLimited;
+    bool public isPaused;
 
     mapping(address => uint256) public _claimedWhitelist;
 
@@ -29,19 +30,23 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
         isLimited = limited;
     }
 
-    function proveWhitelisted(bytes32[] calldata proof)
+    function updateIsPuases(bool paused) public onlyOwner {
+        isPaused = paused;
+    }
+
+    function proveWhitelisted(address owner, bytes32[] calldata proof)
         public
         view
         returns (bool)
     {
-        bytes32 leaf = keccak256(abi.encodePacked(msg.sender));
+        bytes32 leaf = keccak256(abi.encodePacked(owner));
         return MerkleProof.verify(proof, rootHash, leaf);
     }
 
-    function _claimWhitelist(bytes32[] calldata proof) internal {
+    function _claimWhitelist(address owner, bytes32[] calldata proof) internal {
         if (isLimited) {
             require(
-                proveWhitelisted(proof),
+                proveWhitelisted(owner, proof),
                 "MerkleWhitelist: Account is not in the whitelist"
             );
 
@@ -53,5 +58,27 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
             _claimedWhitelist[msg.sender] = round;
             emit ClaimWhitelist(msg.sender, round);
         }
+    }
+
+    function isMintable(address owner, bytes32[] calldata proof)
+        public
+        view
+        returns (uint256)
+    {
+        uint256 status = 0;
+
+        if (!isPaused) {
+            if (isLimited) {
+                if (proveWhitelisted(owner, proof)) {
+                    if (_claimedWhitelist[msg.sender] != round) {
+                        status = 1;
+                    }
+                }
+            } else {
+                status = 2;
+            }
+        }
+
+        return status;
     }
 }
