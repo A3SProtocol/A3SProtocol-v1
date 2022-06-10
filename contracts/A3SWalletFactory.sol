@@ -65,7 +65,7 @@ contract A3SWalletFactory is
         bytes32 salt,
         bool useFiatToken,
         bytes32[] calldata proof
-    ) external payable virtual override {
+    ) external payable virtual override returns (address) {
         _claimWhitelist(proof);
 
         if (useFiatToken) {
@@ -96,6 +96,8 @@ contract A3SWalletFactory is
         _walletsOwner[newWallet] = to;
 
         emit MintWallet(to, salt, newWallet, newTokenId);
+
+        return newWallet;
     }
 
     /**

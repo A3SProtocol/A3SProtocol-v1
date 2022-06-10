@@ -21,6 +21,8 @@ describe("A3SWalletFactory Contract", () => {
       "A3S",
     ]);
 
+    await factory.deployed();
+
     await factory.mintWallet(
       user1.address,
       hre.ethers.utils.formatBytes32String("0"),

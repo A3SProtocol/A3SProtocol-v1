@@ -54,7 +54,7 @@ contract A3SWalletFactoryV2 is
         bytes32 salt,
         bool useFiatToken,
         bytes32[] calldata proof
-    ) external payable virtual override {
+    ) external payable virtual override returns (address) {
         if (useFiatToken) {
             require(_fiatToken != address(0), "A3SProtocol: FiatToken not set");
             IERC20Upgradeable(_fiatToken).transferFrom(
@@ -84,6 +84,8 @@ contract A3SWalletFactoryV2 is
         _walletsOwner[newWallet] = to;
 
         emit MintWallet(to, salt, newWallet, newTokenId);
+
+        return newWallet;
     }
 
     /**

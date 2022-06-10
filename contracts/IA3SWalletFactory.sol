@@ -43,7 +43,7 @@ interface IA3SWalletFactory is IERC721Upgradeable {
         bytes32 salt,
         bool useFiatToken,
         bytes32[] calldata proof
-    ) external payable;
+    ) external payable returns (address);
 
     /**
      * @dev Transfer a batch of `tokens` from `from` to `bo`
