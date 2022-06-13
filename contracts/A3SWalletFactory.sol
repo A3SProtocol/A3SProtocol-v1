@@ -26,7 +26,7 @@ contract A3SWalletFactory is
     // Token ID counter
     CountersUpgradeable.Counter public tokenIdCounter;
 
-    string public baseTokenURI;
+    string public baseMetaURI;
 
     // Token for fees
     address public fiatToken;
@@ -47,7 +47,7 @@ contract A3SWalletFactory is
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
     function initialize(string calldata _uri) public initializer {
-        baseTokenURI = _uri;
+        baseMetaURI = _uri;
         __ERC721_init("A3SProtocol", "A3S");
         __Ownable_init();
     }
@@ -113,6 +113,13 @@ contract A3SWalletFactory is
     }
 
     /**
+     * @dev Update the base `uri` of common meta path's prefix
+     */
+    function updateBaseMetaURI(string calldata uri) public onlyOwner {
+        baseMetaURI = uri;
+    }
+
+    /**
      * @dev Update fiat token for fees to `token`
      */
     function updateFiatToken(address token) public onlyOwner {
@@ -120,7 +127,7 @@ contract A3SWalletFactory is
     }
 
     /**
-     * @dev Update `amount` of fiat tokens to mint a wallet
+     * @dev Update the `amount` of fiat tokens to mint a wallet
      */
     function updateFiatTokenFee(uint256 amount) public onlyOwner {
         fiatTokenFee = amount;

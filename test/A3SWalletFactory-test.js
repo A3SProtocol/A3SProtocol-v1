@@ -32,7 +32,7 @@ describe("A3SWalletFactory Contract", () => {
 
     Erc20Token = await hre.ethers.getContractFactory("TestToken");
     erc20Token = await Erc20Token.deploy();
-    await erc20Token.mint(owner.address, 100);
+    await erc20Token.mint(factory.address, 100);
   });
 
   it("Deployment: Can Deploy A3SWalletFactory Contract", async () => {
@@ -41,161 +41,62 @@ describe("A3SWalletFactory Contract", () => {
     expect(await factory.symbol()).to.equal("A3S");
   });
 
-  // it("Upgrade: Can upgrade contract with keeping old state", async () => {
-  //   const A3SWalletFactoryV2 = await ethers.getContractFactory(
-  //     "A3SWalletFactoryV2"
-  //   );
-  //   const factoryV2 = await upgrades.upgradeProxy(
-  //     factory.address,
-  //     A3SWalletFactoryV2
-  //   );
+  it("BaseMetaURI: Can Update base meta uri", async () => {
+    const newURI = "https://ipfs.io/ipfs/...";
+    await factory.updateBaseMetaURI(newURI);
 
-  //   expect(await factory.name()).to.equal("A3SProtocol");
-  //   expect(await factory.symbol()).to.equal("A3S");
-  //   expect(await factory.balanceOf(user1.address)).to.equal(1);
-  // });
+    expect(await factory.baseMetaURI()).to.equal(newURI);
+  });
 
-  it("FaitToken: Can update fiat token address", async () => {
+  it("WithdrawEther: Can withdraw Ether", async () => {
+    const amount = ethers.utils.parseEther("50.0");
+    await user1.sendTransaction({
+      to: factory.address,
+      value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
+    });
+    await factory.withdrawEther(amount);
+
+    expect(await provider.getBalance(factory.address)).to.equal(amount);
+    expect(await provider.getBalance(owner.address)).to.gte(
+      ethers.utils.parseEther("10000.0")
+    );
+    expect(await provider.getBalance(owner.address)).to.lte(
+      ethers.utils.parseEther("10050.0")
+    );
+  });
+
+  it("WithdrawEther: ", async () => {
+    const amount = ethers.utils.parseEther("50.0");
+    await user1.sendTransaction({
+      to: factory.address,
+      value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
+    });
+
+    try {
+      await factory.connect(user1).withdrawEther(amount);
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Ownable: caller is not the owner");
+    }
+  });
+
+  it("WithdrawToken:  Can withdraw Token", async () => {
+    const amount = 50;
     await factory.updateFiatToken(erc20Token.address);
-    expect(await factory.fiatToken()).to.equal(erc20Token.address);
+    await factory.withdrawToken(amount);
+
+    expect(await erc20Token.balanceOf(factory.address)).to.equal(50);
+    expect(await erc20Token.balanceOf(owner.address)).to.equal(50);
   });
 
-  it("FaitToken: Should failed update fiat token address", async () => {
-    try {
-      await factory.connect(user1).updateFiatToken(erc20Token.address);
-      throw new Error("Dose not throw Error");
-    } catch (e) {
-      expect(e.message).includes("Ownable: caller is not the owner");
-    }
-  });
-
-  it("FaitTokenFee: Can update fiat token fees", async () => {
-    const feeAmount = 10;
-    await factory.updateFiatTokenFee(feeAmount);
-    expect(await factory.fiatTokenFee()).to.equal(feeAmount);
-  });
-
-  it("FaitTokenFee: Should failed update fiat token fees", async () => {
-    try {
-      const feeAmount = 10;
-      await factory.connect(user1).updateFiatTokenFee(feeAmount);
-      throw new Error("Dose not throw Error");
-    } catch (e) {
-      expect(e.message).includes("Ownable: caller is not the owner");
-    }
-  });
-
-  it("EtherFee: Can update ether fees", async () => {
-    const feeAmount = 1;
-    await factory.updateEtherFee(feeAmount);
-    expect(await factory.etherFee()).to.equal(feeAmount);
-  });
-
-  it("EtherFee: Should failed update ether fees", async () => {
-    try {
-      const feeAmount = 1;
-      await factory.connect(user1).updateEtherFee(feeAmount);
-      throw new Error("Dose not throw Error");
-    } catch (e) {
-      expect(e.message).includes("Ownable: caller is not the owner");
-    }
-  });
-
-  it("MintWallet: Can Mint a New Wallet with ether fee", async () => {
-    await factory.updateEtherFee(1);
-    await factory.mintWallet(
-      user1.address,
-      hre.ethers.utils.formatBytes32String("1"),
-      false,
-      [hre.ethers.utils.formatBytes32String("")],
-      { value: ethers.utils.parseEther("2.0") }
-    );
-
-    let secondTokenId = 2;
-    let secondWalletAddress = await factory.walletOf(secondTokenId);
-
-    expect(await factory.ownerOf(secondTokenId)).to.equal(user1.address);
-    expect(await factory.walletIdOf(secondWalletAddress)).to.equal(
-      secondTokenId
-    );
-    expect(await factory.walletOwnerOf(secondWalletAddress)).to.equal(
-      user1.address
-    );
-    expect(await factory.balanceOf(user1.address)).to.equal(2);
-  });
-
-  it("MintWallet: Can Mint a New Wallet with fiat token fee", async () => {
+  it("WithdrawToken: Should failed to withdraw Token", async () => {
+    const amount = 50;
     await factory.updateFiatToken(erc20Token.address);
-    await factory.updateFiatTokenFee(10);
-    await erc20Token.approve(factory.address, 50);
-
-    await factory.mintWallet(
-      user1.address,
-      hre.ethers.utils.formatBytes32String("1"),
-      true,
-      [hre.ethers.utils.formatBytes32String("")]
-    );
-
-    let secondTokenId = 2;
-    let secondWalletAddress = await factory.walletOf(secondTokenId);
-
-    expect(await erc20Token.balanceOf(factory.address)).to.equal(10);
-    expect(await erc20Token.balanceOf(owner.address)).to.equal(90);
-
-    expect(await factory.ownerOf(secondTokenId)).to.equal(user1.address);
-    expect(await factory.walletIdOf(secondWalletAddress)).to.equal(
-      secondTokenId
-    );
-    expect(await factory.walletOwnerOf(secondWalletAddress)).to.equal(
-      user1.address
-    );
-    expect(await factory.balanceOf(user1.address)).to.equal(2);
-  });
-
-  it("Approve: Can Approve Wallet", async () => {
-    await factory.connect(user1).approve(user2.address, tokenId);
-
-    expect(await factory.getApproved(tokenId)).to.equal(user2.address);
-  });
-
-  it("Approve: Failed to Approve Wallet (only owner)", async () => {
     try {
-      await factory.approve(user2.address, tokenId);
+      await factory.connect(user1).withdrawToken(amount);
       throw new Error("Dose not throw Error");
     } catch (e) {
-      expect(e.message).includes(
-        "ERC721: approve caller is not owner nor approved for all"
-      );
-    }
-  });
-
-  it("SetApprovalForAll: Can SetApprovalForAll Wallet", async () => {
-    await factory.connect(user1).setApprovalForAll(user2.address, true);
-
-    expect(
-      await factory.isApprovedForAll(user1.address, user2.address)
-    ).to.equal(true);
-  });
-
-  it("TransferFrom: Can TransferFrom Wallet", async () => {
-    await factory
-      .connect(user1)
-      .transferFrom(user1.address, user2.address, tokenId);
-
-    expect(await factory.ownerOf(tokenId)).to.equal(user2.address);
-    expect(await factory.walletOwnerOf(walletAddress)).to.equal(user2.address);
-    expect(await factory.balanceOf(user1.address)).to.equal(0);
-    expect(await factory.balanceOf(user2.address)).to.equal(1);
-  });
-
-  it("TransferFrom: Failed TransferFrom Walle (only owner)", async () => {
-    try {
-      await factory.transferFrom(user1.address, user2.address, tokenId);
-      throw new Error("Dose not throw Error");
-    } catch (e) {
-      expect(e.message).includes(
-        "ERC721: transfer caller is not owner nor approved"
-      );
+      expect(e.message).includes("Ownable: caller is not the owner");
     }
   });
 

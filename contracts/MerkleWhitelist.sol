@@ -5,6 +5,8 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
+import "hardhat/console.sol";
+
 contract MerkleWhitelist is Initializable, OwnableUpgradeable {
     bytes32 public rootHash;
     uint256 public round;
@@ -30,34 +32,8 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
         isLimited = limited;
     }
 
-    function updateIsPuases(bool paused) public onlyOwner {
+    function updateIsPuased(bool paused) public onlyOwner {
         isPaused = paused;
-    }
-
-    function proveWhitelisted(address owner, bytes32[] calldata proof)
-        public
-        view
-        returns (bool)
-    {
-        bytes32 leaf = keccak256(abi.encodePacked(owner));
-        return MerkleProof.verify(proof, rootHash, leaf);
-    }
-
-    function _claimWhitelist(address owner, bytes32[] calldata proof) internal {
-        if (isLimited) {
-            require(
-                proveWhitelisted(owner, proof),
-                "MerkleWhitelist: Account is not in the whitelist"
-            );
-
-            require(
-                claimedWhitelist[msg.sender] != round,
-                "MerkleWhitelist: Account can not calim whitelist twice"
-            );
-
-            claimedWhitelist[msg.sender] = round;
-            emit ClaimWhitelist(msg.sender, round);
-        }
     }
 
     function isMintable(address owner, bytes32[] calldata proof)
@@ -69,7 +45,7 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
 
         if (!isPaused) {
             if (isLimited) {
-                if (proveWhitelisted(owner, proof)) {
+                if (isWhitelisted(owner, proof)) {
                     if (claimedWhitelist[msg.sender] != round) {
                         status = 1;
                     }
@@ -80,5 +56,31 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
         }
 
         return status;
+    }
+
+    function isWhitelisted(address owner, bytes32[] calldata proof)
+        public
+        view
+        returns (bool)
+    {
+        bytes32 leaf = keccak256(abi.encodePacked(owner));
+        return MerkleProof.verify(proof, rootHash, leaf);
+    }
+
+    function _claimWhitelist(address owner, bytes32[] calldata proof) internal {
+        if (isLimited) {
+            require(
+                isWhitelisted(owner, proof),
+                "MerkleWhitelist: Account is not in the whitelist"
+            );
+
+            require(
+                claimedWhitelist[msg.sender] != round,
+                "MerkleWhitelist: Account can not calim whitelist twice"
+            );
+
+            claimedWhitelist[msg.sender] = round;
+            emit ClaimWhitelist(msg.sender, round);
+        }
     }
 }
