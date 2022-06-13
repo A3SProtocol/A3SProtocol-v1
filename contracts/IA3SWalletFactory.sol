@@ -15,14 +15,14 @@ interface IA3SWalletFactory is IERC721Upgradeable {
         uint256 tokenId
     );
 
-    /**
-     * @dev Emitted when successfully trasfered batch of `tokens` from `from` to `to`
-     */
-    event BatchTransferFrom(
-        address indexed from,
-        address indexed to,
-        uint256[] tokens
-    );
+    // /**
+    //  * @dev Emitted when successfully trasfered batch of `tokens` from `from` to `to`
+    //  */
+    // event BatchTransferFrom(
+    //     address indexed from,
+    //     address indexed to,
+    //     uint256[] tokens
+    // );
 
     /**
      * @dev Mints `tokenId`, creates a A3SWallet, and assign the token to `to`.
@@ -92,5 +92,5 @@ interface IA3SWalletFactory is IERC721Upgradeable {
     /**
      * @dev Returns the wallet address computed with create2 method with given `salt` bytes32.
      */
-    function predictWalletAddress(bytes32 salt) external view returns (address);
+    // function predictWalletAddress(bytes32 salt) external view returns (address);
 }

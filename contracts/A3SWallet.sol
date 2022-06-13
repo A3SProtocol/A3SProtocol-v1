@@ -4,6 +4,8 @@ pragma solidity ^0.8.9;
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "./IA3SWalletFactory.sol";
 
+import "hardhat/console.sol";
+
 contract A3SWallet is ERC721Holder {
     // Factory Address
     address public immutable factory;
@@ -35,9 +37,10 @@ contract A3SWallet is ERC721Holder {
         bytes calldata payload,
         uint256 amount
     ) external onlyOwner returns (bytes memory) {
-        (bool success, bytes memory returnData) = address(contractAddress).call{
-            value: amount
-        }(payload);
+        (bool success, bytes memory returnData) = payable(
+            address(contractAddress)
+        ).call{value: amount}(payload);
+
         require(success, "A3SProtocol: General call query failed.");
         return returnData;
     }

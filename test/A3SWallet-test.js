@@ -1,21 +1,38 @@
 const { expect } = require("chai");
 
 describe("A3SWallet Contract", () => {
-  let A3SWalletFactory;
-  let factory;
-  let tokenId;
-  let walletAddress;
-  let wallet;
-  let Erc20Token;
-  let erc20Token;
+  let A3SWalletFactory, factory;
+  let A3SWalletHelper, wlletHelper;
+  let MerkleWhitelist, whitelist;
+  let Erc20Token, erc20Token;
+  let tokenId, walletAddress, wallet;
   let provider;
   let owner, user1, user2;
 
   beforeEach(async () => {
     provider = waffle.provider;
     [owner, user1, user2] = await ethers.getSigners();
-    A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory");
-    factory = await upgrades.deployProxy(A3SWalletFactory, ["ipfs:/"]);
+
+    // Deploy A3SWalletHelper Library
+    A3SWalletHelper = await ethers.getContractFactory("A3SWalletHelper");
+    wlletHelper = await A3SWalletHelper.deploy();
+
+    // Deploy Merkle Whitelist Contract
+    MerkleWhitelist = await ethers.getContractFactory("MerkleWhitelist");
+    whitelist = await MerkleWhitelist.deploy();
+
+    // Deploy A3SWalletFactory
+    A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory", {
+      libraries: { A3SWalletHelper: wlletHelper.address },
+    });
+    factory = await upgrades.deployProxy(A3SWalletFactory, {
+      unsafeAllow: ["external-library-linking"],
+    });
+
+    await factory.deployed();
+
+    await factory.updateWhilelistAddress(whitelist.address);
+    await whitelist.updateFactory(factory.address);
 
     await factory.mintWallet(
       user1.address,
@@ -26,7 +43,6 @@ describe("A3SWallet Contract", () => {
 
     tokenId = 1;
     walletAddress = await factory.walletOf(tokenId);
-
     wallet = await hre.ethers.getContractAt("A3SWallet", walletAddress);
 
     Erc20Token = await hre.ethers.getContractFactory("TestToken");
@@ -79,7 +95,8 @@ describe("A3SWallet Contract", () => {
   });
 
   it("GeneralCall: Can call General Call", async () => {
-    let contractAdress = await erc20Token.address;
+    let contractAddress = await erc20Token.address;
+
     let payload = await hre.web3.eth.abi.encodeFunctionCall(
       {
         name: "transfer",
@@ -104,7 +121,9 @@ describe("A3SWallet Contract", () => {
       [user2.address, "20"]
     );
 
-    await wallet.connect(user1).generalCall(contractAdress, payload, 0);
+    await wallet
+      .connect(user1)
+      .generalCall(contractAddress, payload, hre.ethers.utils.parseEther("0"));
 
     expect(await erc20Token.balanceOf(wallet.address)).to.equal(80);
     expect(await erc20Token.balanceOf(user2.address)).to.equal(20);

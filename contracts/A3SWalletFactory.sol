@@ -7,26 +7,28 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
 
 import "./IA3SWalletFactory.sol";
-import "./A3SWallet.sol";
-import "./MerkleWhitelist.sol";
+import "./IMerkleWhitelist.sol";
+import "./libraries/A3SWalletHelper.sol";
 
 contract A3SWalletFactory is
     Initializable,
     OwnableUpgradeable,
     UUPSUpgradeable,
     ERC721Upgradeable,
-    IA3SWalletFactory,
-    MerkleWhitelist
+    IA3SWalletFactory
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
     // Token ID counter
     CountersUpgradeable.Counter public tokenIdCounter;
 
+    // Commom meta path prefix
     string public baseMetaURI;
+
+    // Whitelist contract's address
+    address public whilelistAddress;
 
     // Token for fees
     address public fiatToken;
@@ -46,8 +48,7 @@ contract A3SWalletFactory is
     /**
      * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
      */
-    function initialize(string calldata _uri) public initializer {
-        baseMetaURI = _uri;
+    function initialize() public initializer {
         __ERC721_init("A3SProtocol", "A3S");
         __Ownable_init();
     }
@@ -63,26 +64,26 @@ contract A3SWalletFactory is
         bool useFiatToken,
         bytes32[] calldata proof
     ) external payable virtual override returns (address) {
-        _claimWhitelist(address(msg.sender), proof);
+        // _claimWhitelist(address(msg.sender), proof);
+        IMerkleWhitelist(whilelistAddress).claimWhitelist(
+            address(msg.sender),
+            proof
+        );
 
         if (useFiatToken) {
-            require(fiatToken != address(0), "A3SProtocol: FiatToken not set");
+            require(fiatToken != address(0), "A3S: FiatToken not set");
             IERC20Upgradeable(fiatToken).transferFrom(
                 msg.sender,
                 address(this),
                 fiatTokenFee
             );
         } else {
-            require(msg.value >= etherFee, "A3SProtocol: Not enough ether");
+            require(msg.value >= etherFee, "A3S: Not enough ether");
         }
 
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
-        address newWallet = Create2Upgradeable.deploy(
-            0,
-            salt,
-            _walletBytecode()
-        );
+        address newWallet = A3SWalletHelper.deployWallet(salt);
 
         _mint(to, newTokenId);
 
@@ -100,44 +101,46 @@ contract A3SWalletFactory is
     function batchTransferFrom(
         address from,
         address to,
-        uint256[] calldata tokens
+        uint256[] calldata tokenIds
     ) external {
-        require(tokens.length <= balanceOf(from), "Not enough tokens");
+        require(tokenIds.length <= balanceOf(from), "Not enough tokens");
 
-        for (uint256 i = 0; i < tokens.length; ++i) {
-            uint256 tokenId = tokens[i];
-            transferFrom(from, to, tokenId);
+        for (uint256 i = 0; i < tokenIds.length; ++i) {
+            // uint256 tokenId = tokens[i];
+            transferFrom(from, to, tokenIds[i]);
         }
 
-        emit BatchTransferFrom(from, to, tokens);
+        // emit BatchTransferFrom(from, to, tokenIds);
     }
 
     /**
      * @dev Update the base `uri` of common meta path's prefix
      */
-    function updateBaseMetaURI(string calldata uri) public onlyOwner {
+    function updateBaseMetaURI(string calldata uri) external onlyOwner {
         baseMetaURI = uri;
     }
 
     /**
-     * @dev Update fiat token for fees to `token`
+     * @dev Update the base `uri` of common meta path's prefix
      */
-    function updateFiatToken(address token) public onlyOwner {
+    function updateWhilelistAddress(address whitelistContract)
+        external
+        onlyOwner
+    {
+        whilelistAddress = whitelistContract;
+    }
+
+    /**
+     * @dev Update fiat token for fees to `token` and the `amount` of fiat tokens to mint a wallet
+     */
+    function updateFee(
+        address token,
+        uint256 tokenAmount,
+        uint256 ehterAmount
+    ) external onlyOwner {
         fiatToken = token;
-    }
-
-    /**
-     * @dev Update the `amount` of fiat tokens to mint a wallet
-     */
-    function updateFiatTokenFee(uint256 amount) public onlyOwner {
-        fiatTokenFee = amount;
-    }
-
-    /**
-     * @dev Update ether fees for mint a wallet
-     */
-    function updateEtherFee(uint256 amount) public onlyOwner {
-        etherFee = amount;
+        fiatTokenFee = tokenAmount;
+        etherFee = ehterAmount;
     }
 
     /**
@@ -152,8 +155,10 @@ contract A3SWalletFactory is
      * @dev Withdraw `amount` of fiat token to the _owner
      */
     function withdrawToken(uint256 amount) public onlyOwner {
-        uint256 balance = IERC20Upgradeable(fiatToken).balanceOf(address(this));
-        require(amount <= balance, "Not enough token");
+        require(
+            amount <= IERC20Upgradeable(fiatToken).balanceOf(address(this)),
+            "Not enough token"
+        );
         IERC20Upgradeable(fiatToken).transfer(owner(), amount);
     }
 
@@ -165,14 +170,10 @@ contract A3SWalletFactory is
         view
         virtual
         override
-        returns (address)
+        returns (address wallet)
     {
-        address wallet = _wallets[tokenId];
-        require(
-            wallet != address(0),
-            "A3SProtocol: Wallet address query for nonexistent token"
-        );
-        return wallet;
+        wallet = _wallets[tokenId];
+        require(wallet != address(0), "A3S: Nonexistent token");
     }
 
     /**
@@ -183,14 +184,10 @@ contract A3SWalletFactory is
         view
         virtual
         override
-        returns (uint256)
+        returns (uint256 tokenId)
     {
-        uint256 tokenId = _walletsId[wallet];
-        require(
-            tokenId != 0,
-            "A3SProtocol: Token ID query for nonexistent wallet"
-        );
-        return tokenId;
+        tokenId = _walletsId[wallet];
+        require(tokenId != 0, "A3S: Nonexistent wallet");
     }
 
     /**
@@ -201,14 +198,10 @@ contract A3SWalletFactory is
         view
         virtual
         override
-        returns (address)
+        returns (address owner)
     {
-        address owner = ownerOf(walletIdOf(wallet));
-        require(
-            owner != address(0),
-            "A3SProtocol: Owner query for nonexistent wallet"
-        );
-        return owner;
+        owner = ownerOf(walletIdOf(wallet));
+        require(owner != address(0), "A3S: Nonexistent wallet");
     }
 
     function walletListOwnerOf(address owner)
@@ -220,36 +213,13 @@ contract A3SWalletFactory is
         uint256 id = 1;
         uint256 count = 0;
         for (; id <= tokenIdCounter.current(); id++) {
-            ownerOf(id) == owner;
-            results[count] = ownerOf(id);
+            if (ownerOf(id) == owner) {
+                results[count] = walletOf(id);
+                count++;
+            }
         }
 
         return results;
-    }
-
-    /**
-     * @dev See {IA3SWalletFactory-predictWalletAddress}.
-     */
-    function predictWalletAddress(bytes32 salt)
-        external
-        view
-        virtual
-        override
-        returns (address)
-    {
-        return
-            Create2Upgradeable.computeAddress(
-                salt,
-                keccak256(_walletBytecode())
-            );
-    }
-
-    /**
-     * @dev Returns bytecode of A3SWallet contract.
-     */
-    function _walletBytecode() internal view returns (bytes memory) {
-        bytes memory bytecode = type(A3SWallet).creationCode;
-        return abi.encodePacked(bytecode, abi.encode(address(this)));
     }
 
     function _authorizeUpgrade(address newImplementation)

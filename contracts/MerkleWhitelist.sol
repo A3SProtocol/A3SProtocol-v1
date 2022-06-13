@@ -1,58 +1,51 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 
-import "hardhat/console.sol";
+import "./IMerkleWhitelist.sol";
 
-contract MerkleWhitelist is Initializable, OwnableUpgradeable {
+contract MerkleWhitelist is Ownable, IMerkleWhitelist {
+    bool public isLimited;
+    address public factory;
     bytes32 public rootHash;
     uint256 public round;
-    bool public isLimited;
-    bool public isPaused;
 
     mapping(address => uint256) public claimedWhitelist;
-
-    event UpdateMerkleRoot(bytes32 rootHash);
-
-    event ClaimWhitelist(address indexed sender, uint256 round);
 
     function updateRootHash(bytes32 merkleRootHash) external onlyOwner {
         rootHash = merkleRootHash;
         emit UpdateMerkleRoot(merkleRootHash);
     }
 
+    function updateFactory(address factoryAddress) external onlyOwner {
+        factory = factoryAddress;
+    }
+
     function updateRound() public onlyOwner {
         round += 1;
     }
 
-    function updateIsLimited(bool limited) public onlyOwner {
+    function updateIsLimited(bool limited) external onlyOwner {
         isLimited = limited;
     }
 
-    function updateIsPuased(bool paused) public onlyOwner {
-        isPaused = paused;
-    }
-
     function isMintable(address owner, bytes32[] calldata proof)
-        public
+        external
         view
         returns (uint256)
     {
         uint256 status = 0;
 
-        if (!isPaused) {
-            if (isLimited) {
-                if (isWhitelisted(owner, proof)) {
-                    if (claimedWhitelist[msg.sender] != round) {
-                        status = 1;
-                    }
+        if (isLimited) {
+            if (isWhitelisted(owner, proof)) {
+                if (claimedWhitelist[msg.sender] != round) {
+                    status = 1;
                 }
-            } else {
-                status = 2;
             }
+        } else {
+            status = 2;
         }
 
         return status;
@@ -67,16 +60,15 @@ contract MerkleWhitelist is Initializable, OwnableUpgradeable {
         return MerkleProof.verify(proof, rootHash, leaf);
     }
 
-    function _claimWhitelist(address owner, bytes32[] calldata proof) internal {
+    function claimWhitelist(address owner, bytes32[] calldata proof) external {
+        require(msg.sender == factory, "Invalid Caller");
+
         if (isLimited) {
-            require(
-                isWhitelisted(owner, proof),
-                "MerkleWhitelist: Account is not in the whitelist"
-            );
+            require(isWhitelisted(owner, proof), "WL: Not whitelisted");
 
             require(
                 claimedWhitelist[msg.sender] != round,
-                "MerkleWhitelist: Account can not calim whitelist twice"
+                "WL: Already Calimed"
             );
 
             claimedWhitelist[msg.sender] = round;

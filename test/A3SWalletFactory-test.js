@@ -2,23 +2,38 @@ const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
 
 describe("A3SWalletFactory Contract", () => {
-  let A3SWalletFactory;
-  let factory;
-  let tokenId;
-  let walletAddress;
+  let A3SWalletFactory, factory;
+  let A3SWalletHelper, wlletHelper;
+  let MerkleWhitelist, whitelist;
+  let Erc20Token, erc20Token;
+  let tokenId, walletAddress;
   let provider;
-  let Erc20Token;
-  let erc20Token;
   let owner, user1, user2;
 
   beforeEach(async () => {
     provider = waffle.provider;
     [owner, user1, user2] = await ethers.getSigners();
 
-    A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory");
-    factory = await upgrades.deployProxy(A3SWalletFactory, ["ipfs:/"]);
+    // Deploy A3SWalletHelper Library
+    A3SWalletHelper = await ethers.getContractFactory("A3SWalletHelper");
+    wlletHelper = await A3SWalletHelper.deploy();
+
+    // Deploy Merkle Whitelist Contract
+    MerkleWhitelist = await ethers.getContractFactory("MerkleWhitelist");
+    whitelist = await MerkleWhitelist.deploy();
+
+    // Deploy A3SWalletFactory
+    A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory", {
+      libraries: { A3SWalletHelper: wlletHelper.address },
+    });
+    factory = await upgrades.deployProxy(A3SWalletFactory, {
+      unsafeAllow: ["external-library-linking"],
+    });
 
     await factory.deployed();
+
+    await factory.updateWhilelistAddress(whitelist.address);
+    await whitelist.updateFactory(factory.address);
 
     await factory.mintWallet(
       user1.address,
@@ -82,7 +97,7 @@ describe("A3SWalletFactory Contract", () => {
 
   it("WithdrawToken:  Can withdraw Token", async () => {
     const amount = 50;
-    await factory.updateFiatToken(erc20Token.address);
+    await factory.updateFee(erc20Token.address, 0, 0);
     await factory.withdrawToken(amount);
 
     expect(await erc20Token.balanceOf(factory.address)).to.equal(50);
@@ -91,29 +106,13 @@ describe("A3SWalletFactory Contract", () => {
 
   it("WithdrawToken: Should failed to withdraw Token", async () => {
     const amount = 50;
-    await factory.updateFiatToken(erc20Token.address);
+    await factory.updateFee(erc20Token.address, 0, 0);
     try {
       await factory.connect(user1).withdrawToken(amount);
       throw new Error("Dose not throw Error");
     } catch (e) {
       expect(e.message).includes("Ownable: caller is not the owner");
     }
-  });
-
-  it("PredictWalletAddress: Should get same addresses with same salt", async () => {
-    expect(
-      await factory.predictWalletAddress(
-        hre.ethers.utils.formatBytes32String("0")
-      )
-    ).to.equal(walletAddress);
-  });
-
-  it("PredictWalletAddress: Should get different addresses with different salt", async () => {
-    expect(
-      await factory.predictWalletAddress(
-        hre.ethers.utils.formatBytes32String("1")
-      )
-    ).not.to.equal(walletAddress);
   });
 
   it("BatchTansferFrom: Should send tow tokens at a same time", async () => {
