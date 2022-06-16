@@ -57,20 +57,4 @@ describe("A3SWalletFactory Contract", () => {
       expect(e.message).includes("Ownable: caller is not the owner");
     }
   });
-
-  // it("EtherFee: Can update ether fees", async () => {
-  //   const feeAmount = 1;
-  //   await factory.updateEtherFee(feeAmount);
-  //   expect(await factory.etherFee()).to.equal(feeAmount);
-  // });
-
-  // it("EtherFee: Should failed update ether fees", async () => {
-  //   try {
-  //     const feeAmount = 1;
-  //     await factory.connect(user1).updateEtherFee(feeAmount);
-  //     throw new Error("Dose not throw Error");
-  //   } catch (e) {
-  //     expect(e.message).includes("Ownable: caller is not the owner");
-  //   }
-  // });
 });

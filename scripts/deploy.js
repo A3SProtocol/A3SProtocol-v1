@@ -33,13 +33,15 @@ async function main() {
   await whitelist.updateFactory(factory.address);
 
   console.log("A3SWalletHelper Address: ", walletHelper.address);
-  verify(walletHelper.address);
-
   console.log("MerkleWhitelist Address: ", whitelist.address);
-  verify(whitelist.address);
-
   console.log("A3SWalletFactoryProxy Address: ", factory.address);
-  verify(factory.address);
+
+  console.log("Waiting for verify .....");
+  setTimeout(() => {
+    verify(walletHelper.address);
+    verify(whitelist.address);
+    verify(factory.address);
+  }, 120000);
 }
 
 function verify(address) {

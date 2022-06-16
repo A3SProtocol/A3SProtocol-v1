@@ -140,4 +140,28 @@ describe("A3SWalletFactory Contract", () => {
       user2.address
     );
   });
+
+  it("PredictWalletAddress: Should get same addresses with same salt", async () => {
+    expect(
+      await factory.predictWalletAddress(
+        hre.ethers.utils.formatBytes32String("0")
+      )
+    ).to.equal(walletAddress);
+  });
+
+  it("PredictWalletAddress: Should get same wallet address with same salt", async () => {
+    expect(
+      await factory.predictWalletAddress(
+        hre.ethers.utils.formatBytes32String("0")
+      )
+    ).to.equal(walletAddress);
+  });
+
+  it("PredictWalletAddress: Should get different addresses with different salt", async () => {
+    expect(
+      await factory.predictWalletAddress(
+        hre.ethers.utils.formatBytes32String("1")
+      )
+    ).to.not.equal(walletAddress);
+  });
 });
