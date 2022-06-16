@@ -32,6 +32,11 @@ module.exports = {
       allowUnlimitedContractSize: true,
     },
 
+    mumbai: {
+      url: process.env.MUMABI_URL,
+      accounts: [process.env.TEST1_PRIVATE_KEY],
+    },
+
     ganache_test: {
       url: "HTTP://127.0.0.1:7545",
       chainId: 1337,
@@ -44,7 +49,7 @@ module.exports = {
     // currency: "USD",
   },
   etherscan: {
-    apiKey: "",
+    apiKey: process.env.POLYSCAN_API_KEY,
   },
   contractSizer: {
     alphaSort: true,

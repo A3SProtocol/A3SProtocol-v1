@@ -15,15 +15,6 @@ interface IA3SWalletFactory is IERC721Upgradeable {
         uint256 tokenId
     );
 
-    // /**
-    //  * @dev Emitted when successfully trasfered batch of `tokens` from `from` to `to`
-    //  */
-    // event BatchTransferFrom(
-    //     address indexed from,
-    //     address indexed to,
-    //     uint256[] tokens
-    // );
-
     /**
      * @dev Mints `tokenId`, creates a A3SWallet, and assign the token to `to`.
      *      Need to charge fees with ether or fait token decided by `useFiatToken`

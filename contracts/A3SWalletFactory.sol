@@ -7,6 +7,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
 
 import "./IA3SWalletFactory.sol";
 import "./IMerkleWhitelist.sol";
@@ -64,7 +65,6 @@ contract A3SWalletFactory is
         bool useFiatToken,
         bytes32[] calldata proof
     ) external payable virtual override returns (address) {
-        // _claimWhitelist(address(msg.sender), proof);
         IMerkleWhitelist(whilelistAddress).claimWhitelist(
             address(msg.sender),
             proof
@@ -220,6 +220,17 @@ contract A3SWalletFactory is
         }
 
         return results;
+    }
+
+    /**
+     * @dev See {IA3SWalletFactory-predictWalletAddress}.
+     */
+    function predictWalletAddress(bytes32 salt)
+        external
+        view
+        returns (address)
+    {
+        return A3SWalletHelper.walletAddress(salt);
     }
 
     function _authorizeUpgrade(address newImplementation)

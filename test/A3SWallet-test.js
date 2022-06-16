@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const TestTokenJson = require("../artifacts/contracts/test/TestToken.sol/TestToken.json");
 
 describe("A3SWallet Contract", () => {
   let A3SWalletFactory, factory;
@@ -56,7 +57,7 @@ describe("A3SWallet Contract", () => {
     expect(await wallet.ownerOf()).to.equal(user1.address);
   });
 
-  it("Ehter: Can Send Ether", async () => {
+  it("GeneralCall: Can Send Ether", async () => {
     await owner.sendTransaction({
       to: wallet.address,
       value: hre.ethers.utils.parseEther("1.0"),
@@ -75,7 +76,7 @@ describe("A3SWallet Contract", () => {
     );
   });
 
-  it("Ehter: Failed to Send Ether (only wallet owner)", async () => {
+  it("GeneralCall: Failed to Send Ether (only wallet owner)", async () => {
     await owner.sendTransaction({
       to: wallet.address,
       value: hre.ethers.utils.parseEther("1.0"),
@@ -97,29 +98,9 @@ describe("A3SWallet Contract", () => {
   it("GeneralCall: Can call General Call", async () => {
     let contractAddress = await erc20Token.address;
 
-    let payload = await hre.web3.eth.abi.encodeFunctionCall(
-      {
-        name: "transfer",
-        type: "function",
-        inputs: [
-          {
-            type: "address",
-            name: "to",
-          },
-          {
-            type: "uint256",
-            name: "amount",
-          },
-        ],
-        outputs: [
-          {
-            type: "bool",
-            name: "nopr",
-          },
-        ],
-      },
-      [user2.address, "20"]
-    );
+    let abi = TestTokenJson.abi[16];
+    let parameters = [user2.address, "20"];
+    let payload = await hre.web3.eth.abi.encodeFunctionCall(abi, parameters);
 
     await wallet
       .connect(user1)
@@ -132,29 +113,10 @@ describe("A3SWallet Contract", () => {
   it("GeneralCall: Should failed (call by non-owner)", async () => {
     try {
       let contractAdress = await erc20Token.address;
-      let payload = await hre.web3.eth.abi.encodeFunctionCall(
-        {
-          name: "transfer",
-          type: "function",
-          inputs: [
-            {
-              type: "address",
-              name: "to",
-            },
-            {
-              type: "uint256",
-              name: "amount",
-            },
-          ],
-          outputs: [
-            {
-              type: "bool",
-              name: "nopr",
-            },
-          ],
-        },
-        [user2.address, "20"]
-      );
+
+      let abi = TestTokenJson.abi[16];
+      let parameters = [user2.address, "20"];
+      let payload = await hre.web3.eth.abi.encodeFunctionCall(abi, parameters);
 
       await wallet.generalCall(contractAdress, payload, 0);
       throw new Error("Dose not throw Error");

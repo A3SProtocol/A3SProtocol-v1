@@ -1,8 +1,9 @@
 const hre = require("hardhat");
+const { exec } = require("child_process");
 
 async function main() {
   let A3SWalletFactory, factory;
-  let A3SWalletHelper, wlletHelper;
+  let A3SWalletHelper, walletHelper;
   let MerkleWhitelist, whitelist;
   let provider;
   let owner;
@@ -12,7 +13,7 @@ async function main() {
 
   // Deploy A3SWalletHelper Library
   A3SWalletHelper = await ethers.getContractFactory("A3SWalletHelper");
-  wlletHelper = await A3SWalletHelper.deploy();
+  walletHelper = await A3SWalletHelper.deploy();
 
   // Deploy Merkle Whitelist Contract
   MerkleWhitelist = await ethers.getContractFactory("MerkleWhitelist");
@@ -20,7 +21,7 @@ async function main() {
 
   // Deploy A3SWalletFactory
   A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory", {
-    libraries: { A3SWalletHelper: wlletHelper.address },
+    libraries: { A3SWalletHelper: walletHelper.address },
   });
   factory = await upgrades.deployProxy(A3SWalletFactory, {
     unsafeAllow: ["external-library-linking"],
@@ -31,26 +32,27 @@ async function main() {
   await factory.updateWhilelistAddress(whitelist.address);
   await whitelist.updateFactory(factory.address);
 
-  // await factory.mintWallet(
-  //   owner.address,
-  //   hre.ethers.utils.formatBytes32String("0"),
-  //   false,
-  //   [hre.ethers.utils.formatBytes32String("")]
-  // );
+  console.log("A3SWalletHelper Address: ", walletHelper.address);
+  verify(walletHelper.address);
 
-  // let A3SWalletFactory;
-  // let factory;
-  // let tokenId;
-  // let walletAddress;
-  // let owner, user1, user2;
+  console.log("MerkleWhitelist Address: ", whitelist.address);
+  verify(whitelist.address);
 
-  // [owner] = await ethers.getSigners();
-  // console.log(owner.address);
+  console.log("A3SWalletFactoryProxy Address: ", factory.address);
+  verify(factory.address);
+}
 
-  // A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory");
-
-  // factory = await upgrades.deployProxy(A3SWalletFactory, [""]);
-  // console.log("A3SWalletFactory deployed to:", factory.address);
+function verify(address) {
+  exec(
+    `npx hardhat --network mumbai verify ${address}`,
+    (err, stdout, stderr) => {
+      if (err) {
+        console.log(stderr);
+      } else {
+        console.log(stdout);
+      }
+    }
+  );
 }
 
 main().catch((error) => {
