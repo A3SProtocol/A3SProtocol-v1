@@ -56,7 +56,7 @@ contract MerkleWhitelist is Ownable, IMerkleWhitelist {
 
         if (isLimited) {
             if (isWhitelisted(owner, proof)) {
-                if (claimedWhitelist[msg.sender] == round) {
+                if (claimedWhitelist[owner] == round) {
                     status = 1;
                 } else {
                     status = 2;
@@ -84,13 +84,10 @@ contract MerkleWhitelist is Ownable, IMerkleWhitelist {
         if (isLimited) {
             require(isWhitelisted(owner, proof), "WL: Not whitelisted");
 
-            require(
-                claimedWhitelist[msg.sender] != round,
-                "WL: Already Calimed"
-            );
+            require(claimedWhitelist[owner] != round, "WL: Already Calimed");
 
-            claimedWhitelist[msg.sender] = round;
-            emit ClaimWhitelist(msg.sender, round);
+            claimedWhitelist[owner] = round;
+            emit ClaimWhitelist(owner, round);
         }
     }
 }

@@ -104,11 +104,6 @@ describe("A3SWalletFactory Contract", () => {
     }
   });
 
-  it("IsMintable: Should return 3 if is not limited", async () => {
-    const proof = [hre.ethers.utils.formatBytes32String("")];
-    expect(await whitelist.isMintable(owner.address, proof)).to.equal(3);
-  });
-
   it("IsMintable: Should return 0 if is limited and is not in whitelist ", async () => {
     await whitelist.updateIsLimited(true);
     const proof = [hre.ethers.utils.formatBytes32String("")];
@@ -170,5 +165,10 @@ describe("A3SWalletFactory Contract", () => {
     } catch (e) {
       expect(e.message).includes("Invalid Caller");
     }
+  });
+
+  it("IsMintable: Should return 3 if is not limited", async () => {
+    const proof = [hre.ethers.utils.formatBytes32String("")];
+    expect(await whitelist.isMintable(owner.address, proof)).to.equal(3);
   });
 });
