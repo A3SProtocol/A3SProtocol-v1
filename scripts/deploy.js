@@ -1,31 +1,62 @@
-// We require the Hardhat Runtime Environment explicitly here. This is optional
-// but useful for running the script in a standalone fashion through `node <script>`.
-//
-// When running the script with `npx hardhat run <script>` you'll find the Hardhat
-// Runtime Environment's members available in the global scope.
 const hre = require("hardhat");
+const { exec } = require("child_process");
 
 async function main() {
-  // Hardhat always runs the compile task when running scripts with its command
-  // line interface.
-  //
-  // If this script is run directly using `node` you may want to call compile
-  // manually to make sure everything is compiled
-  // await hre.run('compile');
+  let A3SWalletFactory, factory;
+  let A3SWalletHelper, walletHelper;
+  let MerkleWhitelist, whitelist;
+  let provider;
+  let owner;
 
-  // We get the contract to deploy
-  const A3SWalletFactory = await hre.ethers.getContractFactory(
-    "A3SWalletFactory"
-  );
-  const factory = await A3SWalletFactory.deploy("A3SProtocol", "A3S");
+  provider = waffle.provider;
+  [owner] = await ethers.getSigners();
+
+  // Deploy A3SWalletHelper Library
+  A3SWalletHelper = await ethers.getContractFactory("A3SWalletHelper");
+  walletHelper = await A3SWalletHelper.deploy();
+
+  // Deploy Merkle Whitelist Contract
+  MerkleWhitelist = await ethers.getContractFactory("MerkleWhitelist");
+  whitelist = await MerkleWhitelist.deploy();
+
+  // Deploy A3SWalletFactory
+  A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory", {
+    libraries: { A3SWalletHelper: walletHelper.address },
+  });
+  factory = await upgrades.deployProxy(A3SWalletFactory, {
+    unsafeAllow: ["external-library-linking"],
+  });
 
   await factory.deployed();
 
-  console.log("A3SWalletFactory deployed to:", factory.address);
+  await factory.updateWhilelistAddress(whitelist.address);
+  await whitelist.updateFactory(factory.address);
+
+  console.log("A3SWalletHelper Address: ", walletHelper.address);
+  console.log("MerkleWhitelist Address: ", whitelist.address);
+  console.log("A3SWalletFactoryProxy Address: ", factory.address);
+
+  console.log("Waiting for verify .....");
+  setTimeout(() => {
+    verify(walletHelper.address);
+    verify(whitelist.address);
+    verify(factory.address);
+  }, 120000);
 }
 
-// We recommend this pattern to be able to use async/await everywhere
-// and properly handle errors.
+function verify(address) {
+  exec(
+    `npx hardhat --network mumbai verify ${address}`,
+    (err, stdout, stderr) => {
+      if (err) {
+        console.log(stderr);
+      } else {
+        console.log(stdout);
+      }
+    }
+  );
+}
+
 main().catch((error) => {
   console.error(error);
   process.exitCode = 1;

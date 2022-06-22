@@ -1,8 +1,11 @@
 require("dotenv").config();
 
+require("@openzeppelin/hardhat-upgrades");
+require("@nomiclabs/hardhat-ganache");
 require("@nomiclabs/hardhat-ethers");
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-web3");
+require("hardhat-contract-sizer");
 require("hardhat-gas-reporter");
 require("solidity-coverage");
 
@@ -25,10 +28,20 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 module.exports = {
   solidity: "0.8.9",
   networks: {
-    ropsten: {
-      url: process.env.ROPSTEN_URL || "",
-      accounts:
-        process.env.PRIVATE_KEY !== undefined ? [process.env.PRIVATE_KEY] : [],
+    hardhat: {
+      allowUnlimitedContractSize: true,
+    },
+
+    mumbai: {
+      url: process.env.MUMABI_URL,
+      accounts: [process.env.TEST1_PRIVATE_KEY],
+    },
+
+    ganache_test: {
+      url: "HTTP://127.0.0.1:7545",
+      chainId: 1337,
+      gas: 10000000000,
+      accounts: "remote",
     },
   },
   gasReporter: {
@@ -36,6 +49,12 @@ module.exports = {
     // currency: "USD",
   },
   etherscan: {
-    apiKey: process.env.ETHERSCAN_API_KEY,
+    apiKey: process.env.POLYSCAN_API_KEY,
+  },
+  contractSizer: {
+    alphaSort: true,
+    disambiguatePaths: false,
+    runOnCompile: true,
+    // strict: true,
   },
 };

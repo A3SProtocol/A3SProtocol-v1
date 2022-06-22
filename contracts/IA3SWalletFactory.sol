@@ -1,9 +1,10 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+// import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 
-interface IA3SWalletFactory is IERC721 {
+interface IA3SWalletFactory is IERC721Upgradeable {
     /**
      * @dev Emitted when a token for a newly created wallet is minted using create2 of the given `salt`, to `to`
      */
@@ -12,15 +13,6 @@ interface IA3SWalletFactory is IERC721 {
         bytes32 indexed salt,
         address wallet,
         uint256 tokenId
-    );
-
-    /**
-     * @dev Emitted when successfully trasfered batch of `tokens` from `from` to `to`
-     */
-    event BatchTransferFrom(
-        address indexed from,
-        address indexed to,
-        uint256[] tokens
     );
 
     /**
@@ -40,8 +32,9 @@ interface IA3SWalletFactory is IERC721 {
     function mintWallet(
         address to,
         bytes32 salt,
-        bool useFiatToken
-    ) external payable;
+        bool useFiatToken,
+        bytes32[] calldata proof
+    ) external payable returns (address);
 
     /**
      * @dev Transfer a batch of `tokens` from `from` to `bo`
@@ -57,7 +50,7 @@ interface IA3SWalletFactory is IERC721 {
     function batchTransferFrom(
         address from,
         address to,
-        uint256[] memory tokens
+        uint256[] calldata tokens
     ) external;
 
     /**
@@ -90,5 +83,5 @@ interface IA3SWalletFactory is IERC721 {
     /**
      * @dev Returns the wallet address computed with create2 method with given `salt` bytes32.
      */
-    function predictWalletAddress(bytes32 salt) external view returns (address);
+    // function predictWalletAddress(bytes32 salt) external view returns (address);
 }
