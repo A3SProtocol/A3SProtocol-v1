@@ -4,7 +4,7 @@ const { exec } = require("child_process");
 async function main() {
   [owner] = await ethers.getSigners();
 
-  const whitelistAddress = "0x0BfB50A37C95306f4bfD4855C076e72eA2c903F0";
+  const whitelistAddress = "0x65c069922eC0bfD0c2eE6bDf47B3F6Bbc31e4903";
   whitelist = await hre.ethers.getContractAt(
     "MerkleWhitelist",
     whitelistAddress

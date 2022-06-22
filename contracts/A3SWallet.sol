@@ -2,11 +2,12 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "./IA3SWalletFactory.sol";
 
 import "hardhat/console.sol";
 
-contract A3SWallet is ERC721Holder {
+contract A3SWallet is ERC721Holder, ERC1155Holder {
     // Factory Address
     address public immutable factory;
 

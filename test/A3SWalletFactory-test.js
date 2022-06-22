@@ -50,11 +50,11 @@ describe("A3SWalletFactory Contract", () => {
     await erc20Token.mint(factory.address, 100);
   });
 
-  // it("Deployment: Can Deploy A3SWalletFactory Contract", async () => {
-  //   expect(factory.address).to.have.length.above(0);
-  //   expect(await factory.name()).to.equal("A3SProtocol");
-  //   expect(await factory.symbol()).to.equal("A3S");
-  // });
+  it("Deployment: Can Deploy A3SWalletFactory Contract", async () => {
+    expect(factory.address).to.have.length.above(0);
+    expect(await factory.name()).to.equal("A3SProtocol");
+    expect(await factory.symbol()).to.equal("A3S");
+  });
 
   it("MintWallet: ", async () => {
     await factory.mintWallet(
