@@ -5,6 +5,9 @@ coverage.json
 typechain
 .env.example
 
+scripts
+test
+
 secret*.json
 
 #Hardhat files

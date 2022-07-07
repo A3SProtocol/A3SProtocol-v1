@@ -23,7 +23,7 @@ contract MerkleWhitelist is Ownable, IMerkleWhitelist {
         _;
     }
 
-    function updateExecutor(address executorAddress) external {
+    function updateExecutor(address executorAddress) external onlyOwner {
         executor = executorAddress;
     }
 

@@ -10,11 +10,11 @@ async function main() {
     whitelistAddress
   );
 
-  // await whitelist.updateRootHash(
-  //   "0xf35fce7e64bbd53dd51ad04694086676edb643732a5b03d135ce5f9084806231"
-  // );
+  await whitelist.updateRootHash(
+    "0xf35fce7e64bbd53dd51ad04694086676edb643732a5b03d135ce5f9084806231"
+  );
   await whitelist.updateIsLimited(false);
-  // await whitelist.updateRound();
+  await whitelist.updateRound();
 }
 
 main().catch((error) => {
