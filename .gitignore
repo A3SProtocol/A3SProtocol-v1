@@ -7,6 +7,9 @@ typechain
 
 scripts
 test
+.openzeppelin
+.vscode
+
 
 secret*.json
 
