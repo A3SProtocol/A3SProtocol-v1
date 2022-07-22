@@ -13,7 +13,9 @@ import "./IA3SWalletFactory.sol";
 import "./IMerkleWhitelist.sol";
 import "./libraries/A3SWalletHelper.sol";
 
-contract A3SWalletFactory is
+import "hardhat/console.sol";
+
+contract A3SWalletFactoryV2 is
     Initializable,
     OwnableUpgradeable,
     UUPSUpgradeable,
@@ -46,14 +48,6 @@ contract A3SWalletFactory is
     // Mapping from  wallet address to token ID
     mapping(address => uint256) private _walletsId;
 
-    /**
-     * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
-     */
-    function initialize() public initializer {
-        __ERC721_init("A3SProtocol", "A3S");
-        __Ownable_init();
-    }
-
     receive() external payable {}
 
     /**
@@ -83,6 +77,8 @@ contract A3SWalletFactory is
 
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
+
+        console.log("TokenId: ", newTokenId);
 
         address newWallet = A3SWalletHelper.deployWallet(salt);
 

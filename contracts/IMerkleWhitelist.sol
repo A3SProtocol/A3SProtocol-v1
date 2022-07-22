@@ -12,4 +12,8 @@ interface IMerkleWhitelist {
         returns (bool);
 
     function claimWhitelist(address owner, bytes32[] calldata proof) external;
+
+    function updateIsLimited(bool limited) external;
+
+    function isLimited() external view returns (bool);
 }
