@@ -54,16 +54,16 @@ module.exports = {
     },
   },
   gasReporter: {
-    // enabled: process.env.REPORT_GAS !== undefined,
-    // currency: "USD",
+    enabled: process.env.REPORT_GAS !== undefined,
+    currency: "USD",
   },
   etherscan: {
     apiKey: process.env.POLYSCAN_API_KEY,
   },
-  contractSizer: {
-    alphaSort: true,
-    disambiguatePaths: false,
-    runOnCompile: true,
-    // strict: true,
-  },
+  // contractSizer: {
+  //   alphaSort: true,
+  //   disambiguatePaths: false,
+  //   runOnCompile: true,
+  //   // strict: true,
+  // },
 };

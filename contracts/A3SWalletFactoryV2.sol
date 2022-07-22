@@ -48,8 +48,6 @@ contract A3SWalletFactoryV2 is
     // Mapping from  wallet address to token ID
     mapping(address => uint256) private _walletsId;
 
-    address public withdrawer;
-
     receive() external payable {}
 
     /**

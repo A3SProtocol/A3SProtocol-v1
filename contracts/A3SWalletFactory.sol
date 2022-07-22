@@ -13,8 +13,6 @@ import "./IA3SWalletFactory.sol";
 import "./IMerkleWhitelist.sol";
 import "./libraries/A3SWalletHelper.sol";
 
-import "hardhat/console.sol";
-
 contract A3SWalletFactory is
     Initializable,
     OwnableUpgradeable,
@@ -85,8 +83,6 @@ contract A3SWalletFactory is
 
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
-
-        console.log("TokenId: ", newTokenId);
 
         address newWallet = A3SWalletHelper.deployWallet(salt);
 
