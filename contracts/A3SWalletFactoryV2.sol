@@ -13,8 +13,6 @@ import "./IA3SWalletFactory.sol";
 import "./IMerkleWhitelist.sol";
 import "./libraries/A3SWalletHelper.sol";
 
-import "hardhat/console.sol";
-
 contract A3SWalletFactoryV2 is
     Initializable,
     OwnableUpgradeable,
@@ -48,6 +46,13 @@ contract A3SWalletFactoryV2 is
     // Mapping from  wallet address to token ID
     mapping(address => uint256) private _walletsId;
 
+    address public projectParty;
+
+    modifier onlyProjectParty() {
+        require(msg.sender == projectParty, "A3S, not project party");
+        _;
+    }
+
     receive() external payable {}
 
     /**
@@ -78,9 +83,8 @@ contract A3SWalletFactoryV2 is
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
 
-        console.log("TokenId: ", newTokenId);
-
-        address newWallet = A3SWalletHelper.deployWallet(salt);
+        bytes32 mutantSalt = keccak256(abi.encodePacked(msg.sender, salt));
+        address newWallet = A3SWalletHelper.deployWallet(mutantSalt);
 
         _mint(to, newTokenId);
 
@@ -138,10 +142,15 @@ contract A3SWalletFactoryV2 is
         etherFee = ehterAmount;
     }
 
+    function updateProjectParty(address _projectParty) external onlyOwner {
+        require(_projectParty != address(0), "Invalid address");
+        projectParty = _projectParty;
+    }
+
     /**
      * @dev Withdraw `amount` of ether to the _owner
      */
-    function withdrawEther(uint256 amount) public onlyOwner {
+    function withdrawEther(uint256 amount) public onlyProjectParty {
         require(amount <= address(this).balance, "Not enough ether");
         payable(address(owner())).transfer(amount);
     }
@@ -149,7 +158,7 @@ contract A3SWalletFactoryV2 is
     /**
      * @dev Withdraw `amount` of fiat token to the _owner
      */
-    function withdrawToken(uint256 amount) public onlyOwner {
+    function withdrawToken(uint256 amount) public onlyProjectParty {
         require(
             amount <= IERC20Upgradeable(fiatToken).balanceOf(address(this)),
             "Not enough token"

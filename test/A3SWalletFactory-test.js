@@ -72,112 +72,112 @@ describe("A3SWalletFactory Contract", () => {
     );
   });
 
-  // it("BaseMetaURI: Can Update base meta uri", async () => {
-  //   const newURI = "https://ipfs.io/ipfs/...";
-  //   await factory.updateBaseMetaURI(newURI);
+  it("BaseMetaURI: Can Update base meta uri", async () => {
+    const newURI = "https://ipfs.io/ipfs/...";
+    await factory.updateBaseMetaURI(newURI);
 
-  //   expect(await factory.baseMetaURI()).to.equal(newURI);
-  // });
+    expect(await factory.baseMetaURI()).to.equal(newURI);
+  });
 
-  // it("WithdrawEther: Can withdraw Ether", async () => {
-  //   const amount = ethers.utils.parseEther("50.0");
-  //   await user1.sendTransaction({
-  //     to: factory.address,
-  //     value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
-  //   });
-  //   await factory.withdrawEther(amount);
+  it("WithdrawEther: Can withdraw Ether", async () => {
+    const amount = ethers.utils.parseEther("50.0");
+    await user1.sendTransaction({
+      to: factory.address,
+      value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
+    });
+    await factory.withdrawEther(amount);
 
-  //   expect(await provider.getBalance(factory.address)).to.equal(amount);
-  //   expect(await provider.getBalance(owner.address)).to.gte(
-  //     ethers.utils.parseEther("10000.0")
-  //   );
-  //   expect(await provider.getBalance(owner.address)).to.lte(
-  //     ethers.utils.parseEther("10050.0")
-  //   );
-  // });
+    expect(await provider.getBalance(factory.address)).to.equal(amount);
+    expect(await provider.getBalance(owner.address)).to.gte(
+      ethers.utils.parseEther("10000.0")
+    );
+    expect(await provider.getBalance(owner.address)).to.lte(
+      ethers.utils.parseEther("10050.0")
+    );
+  });
 
-  // it("WithdrawEther: ", async () => {
-  //   const amount = ethers.utils.parseEther("50.0");
-  //   await user1.sendTransaction({
-  //     to: factory.address,
-  //     value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
-  //   });
+  it("WithdrawEther: ", async () => {
+    const amount = ethers.utils.parseEther("50.0");
+    await user1.sendTransaction({
+      to: factory.address,
+      value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
+    });
 
-  //   try {
-  //     await factory.connect(user1).withdrawEther(amount);
-  //     throw new Error("Dose not throw Error");
-  //   } catch (e) {
-  //     expect(e.message).includes("Ownable: caller is not the owner");
-  //   }
-  // });
+    try {
+      await factory.connect(user1).withdrawEther(amount);
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Ownable: caller is not the owner");
+    }
+  });
 
-  // it("WithdrawToken:  Can withdraw Token", async () => {
-  //   const amount = 50;
-  //   await factory.updateFee(erc20Token.address, 0, 0);
-  //   await factory.withdrawToken(amount);
+  it("WithdrawToken:  Can withdraw Token", async () => {
+    const amount = 50;
+    await factory.updateFee(erc20Token.address, 0, 0);
+    await factory.withdrawToken(amount);
 
-  //   expect(await erc20Token.balanceOf(factory.address)).to.equal(50);
-  //   expect(await erc20Token.balanceOf(owner.address)).to.equal(50);
-  // });
+    expect(await erc20Token.balanceOf(factory.address)).to.equal(50);
+    expect(await erc20Token.balanceOf(owner.address)).to.equal(50);
+  });
 
-  // it("WithdrawToken: Should failed to withdraw Token", async () => {
-  //   const amount = 50;
-  //   await factory.updateFee(erc20Token.address, 0, 0);
-  //   try {
-  //     await factory.connect(user1).withdrawToken(amount);
-  //     throw new Error("Dose not throw Error");
-  //   } catch (e) {
-  //     expect(e.message).includes("Ownable: caller is not the owner");
-  //   }
-  // });
+  it("WithdrawToken: Should failed to withdraw Token", async () => {
+    const amount = 50;
+    await factory.updateFee(erc20Token.address, 0, 0);
+    try {
+      await factory.connect(user1).withdrawToken(amount);
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Ownable: caller is not the owner");
+    }
+  });
 
-  // it("BatchTansferFrom: Should send tow tokens at a same time", async () => {
-  //   await factory.mintWallet(
-  //     user1.address,
-  //     hre.ethers.utils.formatBytes32String("1"),
-  //     false,
-  //     [hre.ethers.utils.formatBytes32String("")]
-  //   );
+  it("BatchTansferFrom: Should send tow tokens at a same time", async () => {
+    await factory.mintWallet(
+      user1.address,
+      hre.ethers.utils.formatBytes32String("1"),
+      false,
+      [hre.ethers.utils.formatBytes32String("")]
+    );
 
-  //   let tokens = [1, 2];
+    let tokens = [1, 2];
 
-  //   await factory
-  //     .connect(user1)
-  //     .batchTransferFrom(user1.address, user2.address, tokens);
+    await factory
+      .connect(user1)
+      .batchTransferFrom(user1.address, user2.address, tokens);
 
-  //   let secondWalletAddress = await factory.walletOf(tokens[1]);
+    let secondWalletAddress = await factory.walletOf(tokens[1]);
 
-  //   expect(await factory.balanceOf(user1.address)).to.equal(0);
-  //   expect(await factory.balanceOf(user2.address)).to.equal(2);
-  //   expect(await factory.ownerOf(tokens[0])).to.equal(user2.address);
-  //   expect(await factory.ownerOf(tokens[1])).to.equal(user2.address);
-  //   expect(await factory.walletOwnerOf(walletAddress)).to.equal(user2.address);
-  //   expect(await factory.walletOwnerOf(secondWalletAddress)).to.equal(
-  //     user2.address
-  //   );
-  // });
+    expect(await factory.balanceOf(user1.address)).to.equal(0);
+    expect(await factory.balanceOf(user2.address)).to.equal(2);
+    expect(await factory.ownerOf(tokens[0])).to.equal(user2.address);
+    expect(await factory.ownerOf(tokens[1])).to.equal(user2.address);
+    expect(await factory.walletOwnerOf(walletAddress)).to.equal(user2.address);
+    expect(await factory.walletOwnerOf(secondWalletAddress)).to.equal(
+      user2.address
+    );
+  });
 
-  // it("PredictWalletAddress: Should get same addresses with same salt", async () => {
-  //   expect(
-  //     await factory.predictWalletAddress(
-  //       hre.ethers.utils.formatBytes32String("0")
-  //     )
-  //   ).to.equal(walletAddress);
-  // });
+  it("PredictWalletAddress: Should get same addresses with same salt", async () => {
+    expect(
+      await factory.predictWalletAddress(
+        hre.ethers.utils.formatBytes32String("0")
+      )
+    ).to.equal(walletAddress);
+  });
 
-  // it("PredictWalletAddress: Should get same wallet address with same salt", async () => {
-  //   expect(
-  //     await factory.predictWalletAddress(
-  //       hre.ethers.utils.formatBytes32String("0")
-  //     )
-  //   ).to.equal(walletAddress);
-  // });
+  it("PredictWalletAddress: Should get same wallet address with same salt", async () => {
+    expect(
+      await factory.predictWalletAddress(
+        hre.ethers.utils.formatBytes32String("0")
+      )
+    ).to.equal(walletAddress);
+  });
 
-  // it("PredictWalletAddress: Should get different addresses with different salt", async () => {
-  //   expect(
-  //     await factory.predictWalletAddress(
-  //       hre.ethers.utils.formatBytes32String("1")
-  //     )
-  //   ).to.not.equal(walletAddress);
-  // });
+  it("PredictWalletAddress: Should get different addresses with different salt", async () => {
+    expect(
+      await factory.predictWalletAddress(
+        hre.ethers.utils.formatBytes32String("1")
+      )
+    ).to.not.equal(walletAddress);
+  });
 });
