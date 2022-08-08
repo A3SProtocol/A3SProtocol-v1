@@ -46,6 +46,11 @@ module.exports = {
       accounts: [process.env.TEST1_PRIVATE_KEY],
     },
 
+    rinkeby: {
+      url: process.env.RINKEBY_URL,
+      accounts: [process.env.TEST1_PRIVATE_KEY],
+    },
+
     ganache_test: {
       url: "HTTP://127.0.0.1:7545",
       chainId: 1337,
@@ -57,13 +62,11 @@ module.exports = {
     enabled: process.env.REPORT_GAS !== undefined,
     currency: "USD",
   },
+
   etherscan: {
-    apiKey: process.env.POLYSCAN_API_KEY,
+    apiKey: {
+      polygonMumbai: process.env.POLYSCAN_API_KEY,
+      rinkeby: process.env.ETHERSCAN_API_KEY,
+    },
   },
-  // contractSizer: {
-  //   alphaSort: true,
-  //   disambiguatePaths: false,
-  //   runOnCompile: true,
-  //   // strict: true,
-  // },
 };
