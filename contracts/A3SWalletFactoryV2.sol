@@ -152,7 +152,7 @@ contract A3SWalletFactoryV2 is
      */
     function withdrawEther(uint256 amount) public onlyProjectParty {
         require(amount <= address(this).balance, "Not enough ether");
-        payable(address(owner())).transfer(amount);
+        payable(projectParty).transfer(amount);
     }
 
     /**
@@ -163,7 +163,7 @@ contract A3SWalletFactoryV2 is
             amount <= IERC20Upgradeable(fiatToken).balanceOf(address(this)),
             "Not enough token"
         );
-        IERC20Upgradeable(fiatToken).transfer(owner(), amount);
+        IERC20Upgradeable(fiatToken).transfer(projectParty, amount);
     }
 
     /**
@@ -234,7 +234,8 @@ contract A3SWalletFactoryV2 is
         view
         returns (address)
     {
-        return A3SWalletHelper.walletAddress(salt);
+        bytes32 mutantSalt = keccak256(abi.encodePacked(msg.sender, salt));
+        return A3SWalletHelper.walletAddress(mutantSalt);
     }
 
     function _authorizeUpgrade(address newImplementation)

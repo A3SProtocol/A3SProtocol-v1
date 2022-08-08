@@ -1,7 +1,8 @@
 {
   "name": "hardhat-project",
   "scripts": {
-    
+    "mumbair": "npx hardhat --network mumbai run",
+    "rinkebyr": "npx hardhat --network rinkeby run"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.6",
