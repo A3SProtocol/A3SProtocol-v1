@@ -3,53 +3,50 @@ const { ethers, upgrades } = require("hardhat");
 const { MerkleTree } = require("merkletreejs");
 const keccak256 = require("keccak256");
 var SHA3 = require("crypto-js/sha3");
+const deployHelper = require("./utils/deplotHelper");
 
 describe("A3SWalletFactory Contract", () => {
-  let A3SWalletFactory, factory;
-  let A3SWalletHelper, wlletHelper;
-  let MerkleWhitelist, whitelist;
-  let Erc20Token, erc20Token;
-  let tokenId, walletAddress;
+  let wlletHelper, factory, whitelist;
   let provider;
-  let owner, user1, user2;
+  let Deployer, User1, User2;
+
+  const getProof = async () => {
+    const leaves = [
+      hre.ethers.utils.solidityPack(
+        ["address", "string"],
+        [Deployer.address, ""]
+      ),
+      hre.ethers.utils.solidityPack(["address", "string"], [User1.address, ""]),
+      hre.ethers.utils.solidityPack(
+        ["address", "string"],
+        [User1.address, "free"]
+      ),
+      hre.ethers.utils.solidityPack(["address", "string"], [User2.address, ""]),
+    ].map((x) => keccak256(x));
+    leaves.sort();
+    const tree = new MerkleTree(leaves, keccak256);
+    const root = tree.getHexRoot();
+    const leaf = keccak256(User1.address);
+    const proof = tree.getHexProof(leaf);
+
+    return [proof, root, tree];
+  };
 
   beforeEach(async () => {
     provider = waffle.provider;
-    [owner, user1, user2] = await ethers.getSigners();
+    [Deployer, User1, User2] = await ethers.getSigners();
 
-    // Deploy A3SWalletHelper Library
-    A3SWalletHelper = await ethers.getContractFactory("A3SWalletHelper");
-    wlletHelper = await A3SWalletHelper.deploy();
+    erc20 = await deployHelper.deployErc20();
+    whitelist = await deployHelper.deployMerkleWhitelist();
+    wlletHelper = await deployHelper.deployWalletHelper();
+    factory = await deployHelper.deployWalletFactory();
 
-    // Deploy Merkle Whitelist Contract
-    MerkleWhitelist = await ethers.getContractFactory("MerkleWhitelist");
-    whitelist = await MerkleWhitelist.deploy();
+    await deployHelper.connectFactoryAndWhitelist();
 
-    // Deploy A3SWalletFactory
-    A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory", {
-      libraries: { A3SWalletHelper: wlletHelper.address },
-    });
-    factory = await upgrades.deployProxy(A3SWalletFactory, {
-      unsafeAllow: ["external-library-linking"],
-    });
-
-    await factory.deployed();
-
-    await factory.updateWhilelistAddress(whitelist.address);
-    await whitelist.updateFactory(factory.address);
-
-    await factory.mintWallet(
-      user1.address,
-      hre.ethers.utils.formatBytes32String("0"),
-      false,
-      [hre.ethers.utils.formatBytes32String("")]
-    );
-
-    tokenId = 1;
-    walletAddress = await factory.walletOf(tokenId);
+    factory = await deployHelper.upgradeWalletFactoryV2();
   });
 
-  it("RootHash: Can update root hash from owner", async () => {
+  it("RootHash: Can update root hash from Deployer", async () => {
     const tmpRootHash = await hre.ethers.utils.formatBytes32String("test");
     await whitelist.updateRootHash(tmpRootHash);
 
@@ -59,34 +56,20 @@ describe("A3SWalletFactory Contract", () => {
   it("RootHash: Can update root hash from executor", async () => {
     const tmpRootHash = await hre.ethers.utils.formatBytes32String("test");
 
-    await whitelist.updateExecutor(user2.address);
+    await whitelist.updateExecutor(User2.address);
     await whitelist.updateRootHash(tmpRootHash);
 
-    expect(await whitelist.connect(user2).rootHash()).to.equal(tmpRootHash);
+    expect(await whitelist.connect(User2).rootHash()).to.equal(tmpRootHash);
   });
 
   it("RootHash: Should failed to update root hash", async () => {
     const tmpRootHash = await hre.ethers.utils.formatBytes32String("test");
 
     try {
-      await whitelist.connect(user1).updateRootHash(tmpRootHash);
+      await whitelist.connect(User1).updateRootHash(tmpRootHash);
       throw new Error("Dose not throw Error");
     } catch (e) {
       expect(e.message).includes("Caller is not Executor or Owner");
-    }
-  });
-
-  it("Round: Can update round", async () => {
-    await whitelist.updateRound();
-    expect(await whitelist.round()).to.equal(1);
-  });
-
-  it("Round: Should failed to update round", async () => {
-    try {
-      await whitelist.connect(user1).updateRound();
-      throw new Error("Dose not throw Error");
-    } catch (e) {
-      expect(e.message).includes("Ownable: caller is not the owner");
     }
   });
 
@@ -96,79 +79,84 @@ describe("A3SWalletFactory Contract", () => {
   });
 
   it("IsLimited: Should failed to update isLimited", async () => {
-    try {
-      await whitelist.connect(user1).updateIsLimited(true);
-      throw new Error("Dose not throw Error");
-    } catch (e) {
-      expect(e.message).includes("Ownable: caller is not the owner");
-    }
+    await expect(whitelist.connect(User1).updateIsLimited(true)).revertedWith(
+      "Ownable: caller is not the owner"
+    );
   });
 
   it("IsMintable: Should return 0 if is limited and is not in whitelist ", async () => {
     await whitelist.updateIsLimited(true);
-    const proof = [hre.ethers.utils.formatBytes32String("")];
+    const approvalCode = "";
+    const [proof, root] = await getProof();
 
-    expect(await whitelist.isMintable(owner.address, proof)).to.equal(0);
+    expect(
+      await whitelist.isMintable(Deployer.address, approvalCode, proof)
+    ).to.equal(0);
   });
 
   it("IsMintable: Should return 1 if is limited, is in whitelist, and is claimed", async () => {
     await whitelist.updateIsLimited(true);
 
-    const leaves = [owner.address, user1.address, user2.address].map((x) =>
-      keccak256(x)
-    );
-    leaves.sort();
-    const tree = new MerkleTree(leaves, keccak256);
-    const root = tree.getHexRoot();
-    const leaf = keccak256(user1.address);
-    const proof = tree.getHexProof(leaf);
-
+    const [proof, root] = await getProof();
     await whitelist.updateRootHash(root);
-    expect(await whitelist.isMintable(user1.address, proof)).to.equal(1);
+
+    await factory
+      .connect(User1)
+      .mintWallet(
+        User1.address,
+        hre.ethers.utils.formatBytes32String(""),
+        "",
+        false,
+        proof
+      );
+
+    expect(await whitelist.isMintable(User1.address, "", proof)).to.equal(1);
   });
 
   it("IsMintable: Should return 2 if is limited, is in whitelist, and is not claimed", async () => {
     await whitelist.updateIsLimited(true);
-    await whitelist.updateRound();
 
-    const leaves = [owner.address, user1.address, user2.address].map((x) =>
-      keccak256(x)
+    const [proof, root] = await getProof();
+    await whitelist.updateRootHash(root);
+
+    expect(await whitelist.isMintable(User1.address, "", proof)).to.equal(2);
+  });
+
+  it("IsMintable: Should return 2 if is limited, is in whitelist, and is not claimed with given valid ticket", async () => {
+    await whitelist.updateIsLimited(true);
+
+    const [_, root, tree] = await getProof();
+
+    const leaf = keccak256(
+      hre.ethers.utils.solidityPack(
+        ["address", "string"],
+        [User1.address, "free"]
+      )
     );
-    leaves.sort();
-
-    const tree = new MerkleTree(leaves, keccak256);
-    const root = tree.getHexRoot();
-    const leaf = keccak256(user1.address);
     const proof = tree.getHexProof(leaf);
 
     await whitelist.updateRootHash(root);
-    expect(await whitelist.isMintable(user1.address, proof)).to.equal(2);
-  });
 
-  it("ClaimWhitelist: Should failed if caller is not factory", async () => {
-    await whitelist.updateIsLimited(true);
-    await whitelist.updateRound();
-
-    const leaves = [owner.address, user1.address, user2.address].map((x) =>
-      keccak256(x)
+    expect(await whitelist.isMintable(User1.address, "free", proof)).to.equal(
+      2
     );
-    leaves.sort();
-
-    const tree = new MerkleTree(leaves, keccak256);
-    const root = tree.getHexRoot();
-    const leaf = keccak256(user1.address);
-    const proof = tree.getHexProof(leaf);
-
-    try {
-      await whitelist.claimWhitelist(user1.address, proof);
-      throw new Error("Dose not throw Error");
-    } catch (e) {
-      expect(e.message).includes("Invalid Caller");
-    }
   });
 
   it("IsMintable: Should return 3 if is not limited", async () => {
     const proof = [hre.ethers.utils.formatBytes32String("")];
-    expect(await whitelist.isMintable(owner.address, proof)).to.equal(3);
+    expect(await whitelist.isMintable(Deployer.address, "", proof)).to.equal(3);
+  });
+
+  it("ClaimWhitelist: Should failed if caller is not factory", async () => {
+    await whitelist.updateIsLimited(true);
+
+    const [proof, root] = await getProof();
+
+    try {
+      await whitelist.claimWhitelist(User1.address, "", proof);
+      throw new Error("Dose not throw Error");
+    } catch (e) {
+      expect(e.message).includes("Invalid Caller");
+    }
   });
 });

@@ -9,16 +9,16 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
 
-import "./IA3SWalletFactory.sol";
-import "./IMerkleWhitelist.sol";
-import "./libraries/A3SWalletHelper.sol";
+import "./IA3SWalletFactoryV2.sol";
+import "./IMerkleWhitelistV2.sol";
+import "../libraries/A3SWalletHelper.sol";
 
 contract A3SWalletFactoryV2 is
     Initializable,
     OwnableUpgradeable,
     UUPSUpgradeable,
     ERC721Upgradeable,
-    IA3SWalletFactory
+    IA3SWalletFactoryV2
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
@@ -61,11 +61,13 @@ contract A3SWalletFactoryV2 is
     function mintWallet(
         address to,
         bytes32 salt,
+        string calldata approvalCode,
         bool useFiatToken,
         bytes32[] calldata proof
     ) external payable virtual override returns (address) {
-        IMerkleWhitelist(whilelistAddress).claimWhitelist(
+        IMerkleWhitelistV2(whilelistAddress).claimWhitelist(
             address(msg.sender),
+            approvalCode,
             proof
         );
 
@@ -91,7 +93,7 @@ contract A3SWalletFactoryV2 is
         _wallets[newTokenId] = newWallet;
         _walletsId[newWallet] = newTokenId;
 
-        emit MintWallet(to, salt, newWallet, newTokenId);
+        emit MintWallet(to, salt, approvalCode, newWallet, newTokenId);
 
         return newWallet;
     }

@@ -1,43 +1,28 @@
 const { expect } = require("chai");
 const { ethers, upgrades } = require("hardhat");
+const deployHelper = require("./utils/deplotHelper");
 
 describe("A3SWalletFactory Contract", () => {
-  let A3SWalletFactory, factory;
-  let A3SWalletHelper, wlletHelper;
-  let MerkleWhitelist, whitelist;
-  let Erc20Token, erc20Token;
-  let tokenId, walletAddress;
+  let wlletHelper, factory, whitelist, erc20;
   let provider;
-  let owner, user1, user2;
+  let Deployer, User1, User2;
 
   beforeEach(async () => {
     provider = waffle.provider;
-    [owner, user1, user2] = await ethers.getSigners();
+    [Deployer, User1, User2] = await ethers.getSigners();
 
-    // Deploy A3SWalletHelper Library
-    A3SWalletHelper = await ethers.getContractFactory("A3SWalletHelper");
-    wlletHelper = await A3SWalletHelper.deploy();
+    erc20 = await deployHelper.deployErc20();
+    whitelist = await deployHelper.deployMerkleWhitelist();
+    wlletHelper = await deployHelper.deployWalletHelper();
+    factory = await deployHelper.deployWalletFactory();
 
-    // Deploy Merkle Whitelist Contract
-    MerkleWhitelist = await ethers.getContractFactory("MerkleWhitelist");
-    whitelist = await MerkleWhitelist.deploy();
-
-    // Deploy A3SWalletFactory
-    A3SWalletFactory = await hre.ethers.getContractFactory("A3SWalletFactory", {
-      libraries: { A3SWalletHelper: wlletHelper.address },
-    });
-    factory = await upgrades.deployProxy(A3SWalletFactory, {
-      unsafeAllow: ["external-library-linking"],
-    });
-
-    await factory.deployed();
-
-    await factory.updateWhilelistAddress(whitelist.address);
-    await whitelist.updateFactory(factory.address);
+    await deployHelper.connectFactoryAndWhitelist();
+    factory = await deployHelper.upgradeWalletFactoryV2();
 
     await factory.mintWallet(
-      user1.address,
+      User1.address,
       hre.ethers.utils.formatBytes32String("0"),
+      "",
       false,
       [hre.ethers.utils.formatBytes32String("")]
     );
@@ -45,9 +30,7 @@ describe("A3SWalletFactory Contract", () => {
     tokenId = 1;
     walletAddress = await factory.walletOf(tokenId);
 
-    Erc20Token = await hre.ethers.getContractFactory("TestToken");
-    erc20Token = await Erc20Token.deploy();
-    await erc20Token.mint(factory.address, 100);
+    await erc20.mint(factory.address, 100);
   });
 
   it("Deployment: Can Deploy A3SWalletFactory Contract", async () => {
@@ -58,15 +41,17 @@ describe("A3SWalletFactory Contract", () => {
 
   it("MintWallet: ", async () => {
     await factory.mintWallet(
-      user1.address,
+      User1.address,
       hre.ethers.utils.formatBytes32String("1"),
+      "",
       false,
       [hre.ethers.utils.formatBytes32String("")]
     );
 
     await factory.mintWallet(
-      user1.address,
+      User1.address,
       hre.ethers.utils.formatBytes32String("2"),
+      "",
       false,
       [hre.ethers.utils.formatBytes32String("")]
     );
@@ -79,62 +64,63 @@ describe("A3SWalletFactory Contract", () => {
     expect(await factory.baseMetaURI()).to.equal(newURI);
   });
 
-  it("WithdrawEther: Can withdraw Ether", async () => {
-    const amount = ethers.utils.parseEther("50.0");
-    await user1.sendTransaction({
-      to: factory.address,
-      value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
-    });
-    await factory.withdrawEther(amount);
+  // it("WithdrawEther: Can withdraw Ether", async () => {
+  //   const amount = ethers.utils.parseEther("50.0");
+  //   await User1.sendTransaction({
+  //     to: factory.address,
+  //     value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
+  //   });
+  //   await factory.withdrawEther(amount);
 
-    expect(await provider.getBalance(factory.address)).to.equal(amount);
-    expect(await provider.getBalance(owner.address)).to.gte(
-      ethers.utils.parseEther("10000.0")
-    );
-    expect(await provider.getBalance(owner.address)).to.lte(
-      ethers.utils.parseEther("10050.0")
-    );
-  });
+  //   expect(await provider.getBalance(factory.address)).to.equal(amount);
+  //   expect(await provider.getBalance(Deployer.address)).to.gte(
+  //     ethers.utils.parseEther("10000.0")
+  //   );
+  //   expect(await provider.getBalance(Deployer.address)).to.lte(
+  //     ethers.utils.parseEther("10050.0")
+  //   );
+  // });
 
-  it("WithdrawEther: ", async () => {
-    const amount = ethers.utils.parseEther("50.0");
-    await user1.sendTransaction({
-      to: factory.address,
-      value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
-    });
+  // it("WithdrawEther: ", async () => {
+  //   const amount = ethers.utils.parseEther("50.0");
+  //   await User1.sendTransaction({
+  //     to: factory.address,
+  //     value: ethers.utils.parseEther("100.0"), // Sends exactly 1.0 ether
+  //   });
 
-    try {
-      await factory.connect(user1).withdrawEther(amount);
-      throw new Error("Dose not throw Error");
-    } catch (e) {
-      expect(e.message).includes("Ownable: caller is not the owner");
-    }
-  });
+  //   try {
+  //     await factory.connect(User1).withdrawEther(amount);
+  //     throw new Error("Dose not throw Error");
+  //   } catch (e) {
+  //     expect(e.message).includes("Ownable: caller is not the owner");
+  //   }
+  // });
 
-  it("WithdrawToken:  Can withdraw Token", async () => {
-    const amount = 50;
-    await factory.updateFee(erc20Token.address, 0, 0);
-    await factory.withdrawToken(amount);
+  // it("WithdrawToken:  Can withdraw Token", async () => {
+  //   const amount = 50;
+  //   await factory.updateFee(erc20.address, 0, 0);
+  //   await factory.withdrawToken(amount);
 
-    expect(await erc20Token.balanceOf(factory.address)).to.equal(50);
-    expect(await erc20Token.balanceOf(owner.address)).to.equal(50);
-  });
+  //   expect(await erc20.balanceOf(factory.address)).to.equal(50);
+  //   expect(await erc20.balanceOf(Deployer.address)).to.equal(50);
+  // });
 
-  it("WithdrawToken: Should failed to withdraw Token", async () => {
-    const amount = 50;
-    await factory.updateFee(erc20Token.address, 0, 0);
-    try {
-      await factory.connect(user1).withdrawToken(amount);
-      throw new Error("Dose not throw Error");
-    } catch (e) {
-      expect(e.message).includes("Ownable: caller is not the owner");
-    }
-  });
+  // it("WithdrawToken: Should failed to withdraw Token", async () => {
+  //   const amount = 50;
+  //   await factory.updateFee(erc20.address, 0, 0);
+  //   try {
+  //     await factory.connect(User1).withdrawToken(amount);
+  //     throw new Error("Dose not throw Error");
+  //   } catch (e) {
+  //     expect(e.message).includes("Ownable: caller is not the owner");
+  //   }
+  // });
 
   it("BatchTansferFrom: Should send tow tokens at a same time", async () => {
     await factory.mintWallet(
-      user1.address,
+      User1.address,
       hre.ethers.utils.formatBytes32String("1"),
+      "",
       false,
       [hre.ethers.utils.formatBytes32String("")]
     );
@@ -142,18 +128,18 @@ describe("A3SWalletFactory Contract", () => {
     let tokens = [1, 2];
 
     await factory
-      .connect(user1)
-      .batchTransferFrom(user1.address, user2.address, tokens);
+      .connect(User1)
+      .batchTransferFrom(User1.address, User2.address, tokens);
 
     let secondWalletAddress = await factory.walletOf(tokens[1]);
 
-    expect(await factory.balanceOf(user1.address)).to.equal(0);
-    expect(await factory.balanceOf(user2.address)).to.equal(2);
-    expect(await factory.ownerOf(tokens[0])).to.equal(user2.address);
-    expect(await factory.ownerOf(tokens[1])).to.equal(user2.address);
-    expect(await factory.walletOwnerOf(walletAddress)).to.equal(user2.address);
+    expect(await factory.balanceOf(User1.address)).to.equal(0);
+    expect(await factory.balanceOf(User2.address)).to.equal(2);
+    expect(await factory.ownerOf(tokens[0])).to.equal(User2.address);
+    expect(await factory.ownerOf(tokens[1])).to.equal(User2.address);
+    expect(await factory.walletOwnerOf(walletAddress)).to.equal(User2.address);
     expect(await factory.walletOwnerOf(secondWalletAddress)).to.equal(
-      user2.address
+      User2.address
     );
   });
 

@@ -11,7 +11,7 @@ import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
 
 import "./IA3SWalletFactory.sol";
 import "./IMerkleWhitelist.sol";
-import "./libraries/A3SWalletHelper.sol";
+import "../libraries/A3SWalletHelper.sol";
 
 contract A3SWalletFactory is
     Initializable,
