@@ -39,6 +39,12 @@ interface IA3SWalletFactoryV3 is IERC721Upgradeable {
         bytes calldata signature
     ) external payable returns (address);
 
+    function batchMintWallet(
+        address to,
+        bytes32[] memory salts,
+        bool useFiatToken
+    ) external payable;
+
     /**
      * @dev Transfer a batch of `tokens` from `from` to `bo`
      *

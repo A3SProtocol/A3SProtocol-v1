@@ -95,11 +95,26 @@ contract A3SWalletFactoryV3 is
         return newWallet;
     }
 
-    function batchMintWallet(address to, bytes32[] memory salts) external {
+    function batchMintWallet(
+        address to,
+        bytes32[] memory salts,
+        bool useFiatToken
+    ) external payable {
         require(isMintLimited == false, "A3S: Currently not allowed.");
 
         uint256 amount = salts.length;
         require(amount > 0, "A3S: Invalid salt amount");
+
+        if (useFiatToken) {
+            require(fiatToken != address(0), "A3S: FiatToken not set");
+            IERC20Upgradeable(fiatToken).transferFrom(
+                msg.sender,
+                address(this),
+                fiatTokenFee * amount
+            );
+        } else {
+            require(msg.value >= (etherFee * amount), "A3S: Not enough ether");
+        }
 
         uint256 timestamp = 0;
         bytes memory signature;
