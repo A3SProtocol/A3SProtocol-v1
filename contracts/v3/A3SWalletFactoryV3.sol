@@ -90,6 +90,30 @@ contract A3SWalletFactoryV3 is
             require(msg.value >= etherFee, "A3S: Not enough ether");
         }
 
+        address newWallet = _mintWallet(to, salt, timestamp, signature);
+
+        return newWallet;
+    }
+
+    function batchMintWallet(address to, bytes32[] memory salts) external {
+        require(isMintLimited == false, "A3S: Currently not allowed.");
+
+        uint256 amount = salts.length;
+        require(amount > 0, "A3S: Invalid salt amount");
+
+        uint256 timestamp = 0;
+        bytes memory signature;
+        for (uint256 index = 0; index < amount; index++) {
+            _mintWallet(to, salts[index], timestamp, signature);
+        }
+    }
+
+    function _mintWallet(
+        address to,
+        bytes32 salt,
+        uint256 timestamp,
+        bytes memory signature
+    ) internal returns (address) {
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
 
