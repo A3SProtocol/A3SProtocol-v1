@@ -99,7 +99,7 @@ contract A3SWalletFactoryV3 is
         address to,
         bytes32[] memory salts,
         bool useFiatToken
-    ) external payable {
+    ) external payable virtual override {
         require(isMintLimited == false, "A3S: Currently not allowed.");
 
         uint256 amount = salts.length;
