@@ -150,10 +150,10 @@ contract A3SWalletFactoryV3 is
         pure
         returns (bytes32)
     {
-        bytes memory prefix = "\x19Ethereum Signed Message:\n32";
-        bytes32 msgHash = keccak256(abi.encodePacked(owner, timestamp));
-        bytes32 signedHash = keccak256(abi.encodePacked(prefix, msgHash));
-
+        bytes32 msgHash = keccak256(
+            abi.encodePacked("A3S-Verified", owner, timestamp)
+        );
+        bytes32 signedHash = ECDSA.toEthSignedMessageHash(msgHash);
         return signedHash;
     }
 
