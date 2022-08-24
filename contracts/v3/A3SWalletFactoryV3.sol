@@ -310,12 +310,12 @@ contract A3SWalletFactoryV3 is
     /**
      * @dev See {IA3SWalletFactory-predictWalletAddress}.
      */
-    function predictWalletAddress(bytes32 salt)
+    function predictWalletAddress(address owner, bytes32 salt)
         external
         view
         returns (address)
     {
-        bytes32 mutantSalt = keccak256(abi.encodePacked(msg.sender, salt));
+        bytes32 mutantSalt = keccak256(abi.encodePacked(owner, salt));
         return A3SWalletHelper.walletAddress(mutantSalt);
     }
 

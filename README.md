@@ -13,7 +13,7 @@ A3SWalletFactory is adjusted based on [OpenZeppelin's ERC721](https://docs.openz
 > ```
 >   to: the address you want to assign the minted wallet to
 >   salt: 32 bytes of input to determine the generated wallet address, each salt can only be used once
->   useFiatToken: if true, we will charge specified token as fee, else we will charge ehter as fee
+>   useFiatToken: if true, we will charge specified token as fee, else we will charge ether as fee
 > ```
 
 ---
