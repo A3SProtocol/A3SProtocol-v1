@@ -4,13 +4,14 @@ pragma solidity ^0.8.9;
 // import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/IERC721Upgradeable.sol";
 
-interface IA3SWalletFactory is IERC721Upgradeable {
+interface IA3SWalletFactoryV2 is IERC721Upgradeable {
     /**
      * @dev Emitted when a token for a newly created wallet is minted using create2 of the given `salt`, to `to`
      */
     event MintWallet(
         address indexed to,
         bytes32 indexed salt,
+        string indexed approvalCode,
         address wallet,
         uint256 tokenId
     );
@@ -32,6 +33,7 @@ interface IA3SWalletFactory is IERC721Upgradeable {
     function mintWallet(
         address to,
         bytes32 salt,
+        string calldata approvalCode,
         bool useFiatToken,
         bytes32[] calldata proof
     ) external payable returns (address);

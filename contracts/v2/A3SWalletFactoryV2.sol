@@ -9,16 +9,16 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
 
-import "./IA3SWalletFactory.sol";
-import "./IMerkleWhitelist.sol";
-import "./libraries/A3SWalletHelper.sol";
+import "./IA3SWalletFactoryV2.sol";
+import "./IMerkleWhitelistV2.sol";
+import "../libraries/A3SWalletHelper.sol";
 
-contract A3SWalletFactory is
+contract A3SWalletFactoryV2 is
     Initializable,
     OwnableUpgradeable,
     UUPSUpgradeable,
     ERC721Upgradeable,
-    IA3SWalletFactory
+    IA3SWalletFactoryV2
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
@@ -46,12 +46,11 @@ contract A3SWalletFactory is
     // Mapping from  wallet address to token ID
     mapping(address => uint256) private _walletsId;
 
-    /**
-     * @dev Initializes the contract by setting a `name` and a `symbol` to the token collection.
-     */
-    function initialize() public initializer {
-        __ERC721_init("A3SProtocol", "A3S");
-        __Ownable_init();
+    address public projectParty;
+
+    modifier onlyProjectParty() {
+        require(msg.sender == projectParty, "A3S, not project party");
+        _;
     }
 
     receive() external payable {}
@@ -62,11 +61,13 @@ contract A3SWalletFactory is
     function mintWallet(
         address to,
         bytes32 salt,
+        string calldata approvalCode,
         bool useFiatToken,
         bytes32[] calldata proof
     ) external payable virtual override returns (address) {
-        IMerkleWhitelist(whilelistAddress).claimWhitelist(
+        IMerkleWhitelistV2(whilelistAddress).claimWhitelist(
             address(msg.sender),
+            approvalCode,
             proof
         );
 
@@ -84,14 +85,15 @@ contract A3SWalletFactory is
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
 
-        address newWallet = A3SWalletHelper.deployWallet(salt);
+        bytes32 mutantSalt = keccak256(abi.encodePacked(msg.sender, salt));
+        address newWallet = A3SWalletHelper.deployWallet(mutantSalt);
 
         _mint(to, newTokenId);
 
         _wallets[newTokenId] = newWallet;
         _walletsId[newWallet] = newTokenId;
 
-        emit MintWallet(to, salt, newWallet, newTokenId);
+        emit MintWallet(to, salt, approvalCode, newWallet, newTokenId);
 
         return newWallet;
     }
@@ -142,23 +144,28 @@ contract A3SWalletFactory is
         etherFee = ehterAmount;
     }
 
+    function updateProjectParty(address _projectParty) external onlyOwner {
+        require(_projectParty != address(0), "Invalid address");
+        projectParty = _projectParty;
+    }
+
     /**
      * @dev Withdraw `amount` of ether to the _owner
      */
-    function withdrawEther(uint256 amount) public onlyOwner {
+    function withdrawEther(uint256 amount) public onlyProjectParty {
         require(amount <= address(this).balance, "Not enough ether");
-        payable(address(owner())).transfer(amount);
+        payable(projectParty).transfer(amount);
     }
 
     /**
      * @dev Withdraw `amount` of fiat token to the _owner
      */
-    function withdrawToken(uint256 amount) public onlyOwner {
+    function withdrawToken(uint256 amount) public onlyProjectParty {
         require(
             amount <= IERC20Upgradeable(fiatToken).balanceOf(address(this)),
             "Not enough token"
         );
-        IERC20Upgradeable(fiatToken).transfer(owner(), amount);
+        IERC20Upgradeable(fiatToken).transfer(projectParty, amount);
     }
 
     /**
@@ -229,7 +236,8 @@ contract A3SWalletFactory is
         view
         returns (address)
     {
-        return A3SWalletHelper.walletAddress(salt);
+        bytes32 mutantSalt = keccak256(abi.encodePacked(msg.sender, salt));
+        return A3SWalletHelper.walletAddress(mutantSalt);
     }
 
     function _authorizeUpgrade(address newImplementation)

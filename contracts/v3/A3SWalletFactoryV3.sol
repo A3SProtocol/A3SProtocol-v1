@@ -8,17 +8,17 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/CountersUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-import "./IA3SWalletFactory.sol";
-import "./IMerkleWhitelist.sol";
-import "./libraries/A3SWalletHelper.sol";
+import "./IA3SWalletFactoryV3.sol";
+import "../libraries/A3SWalletHelper.sol";
 
-contract A3SWalletFactoryV2 is
+contract A3SWalletFactoryV3 is
     Initializable,
     OwnableUpgradeable,
     UUPSUpgradeable,
     ERC721Upgradeable,
-    IA3SWalletFactory
+    IA3SWalletFactoryV3
 {
     using CountersUpgradeable for CountersUpgradeable.Counter;
 
@@ -48,6 +48,12 @@ contract A3SWalletFactoryV2 is
 
     address public projectParty;
 
+    address public systemSigner;
+
+    bool public isMintLimited;
+
+    mapping(uint256 => bool) isMinted;
+
     modifier onlyProjectParty() {
         require(msg.sender == projectParty, "A3S, not project party");
         _;
@@ -62,12 +68,16 @@ contract A3SWalletFactoryV2 is
         address to,
         bytes32 salt,
         bool useFiatToken,
-        bytes32[] calldata proof
+        uint256 timestamp,
+        bytes calldata signature
     ) external payable virtual override returns (address) {
-        IMerkleWhitelist(whilelistAddress).claimWhitelist(
-            address(msg.sender),
-            proof
-        );
+        if (isMintLimited) {
+            require(
+                isValidToMint(msg.sender, timestamp, signature),
+                "A3S, Unauthorized"
+            );
+            isMinted[timestamp] = true;
+        }
 
         if (useFiatToken) {
             require(fiatToken != address(0), "A3S: FiatToken not set");
@@ -80,6 +90,45 @@ contract A3SWalletFactoryV2 is
             require(msg.value >= etherFee, "A3S: Not enough ether");
         }
 
+        address newWallet = _mintWallet(to, salt, timestamp, signature);
+
+        return newWallet;
+    }
+
+    function batchMintWallet(
+        address to,
+        bytes32[] memory salts,
+        bool useFiatToken
+    ) external payable virtual override {
+        require(isMintLimited == false, "A3S: Currently not allowed.");
+
+        uint256 amount = salts.length;
+        require(amount > 0, "A3S: Invalid salt amount");
+
+        if (useFiatToken) {
+            require(fiatToken != address(0), "A3S: FiatToken not set");
+            IERC20Upgradeable(fiatToken).transferFrom(
+                msg.sender,
+                address(this),
+                fiatTokenFee * amount
+            );
+        } else {
+            require(msg.value >= (etherFee * amount), "A3S: Not enough ether");
+        }
+
+        uint256 timestamp = 0;
+        bytes memory signature;
+        for (uint256 index = 0; index < amount; index++) {
+            _mintWallet(to, salts[index], timestamp, signature);
+        }
+    }
+
+    function _mintWallet(
+        address to,
+        bytes32 salt,
+        uint256 timestamp,
+        bytes memory signature
+    ) internal returns (address) {
         tokenIdCounter.increment();
         uint256 newTokenId = tokenIdCounter.current();
 
@@ -91,9 +140,32 @@ contract A3SWalletFactoryV2 is
         _wallets[newTokenId] = newWallet;
         _walletsId[newWallet] = newTokenId;
 
-        emit MintWallet(to, salt, newWallet, newTokenId);
+        emit MintWallet(to, salt, newWallet, newTokenId, timestamp, signature);
 
         return newWallet;
+    }
+
+    function getSignedHash(address owner, uint256 timestamp)
+        public
+        pure
+        returns (bytes32)
+    {
+        bytes32 msgHash = keccak256(
+            abi.encodePacked("A3S-Verified", owner, timestamp)
+        );
+        bytes32 signedHash = ECDSA.toEthSignedMessageHash(msgHash);
+        return signedHash;
+    }
+
+    function isValidToMint(
+        address owner,
+        uint256 timestamp,
+        bytes calldata signature
+    ) public view returns (bool) {
+        bytes32 signedHash = getSignedHash(owner, timestamp);
+        return
+            !isMinted[timestamp] &&
+            ECDSA.recover(signedHash, signature) == systemSigner;
     }
 
     /**
@@ -145,6 +217,15 @@ contract A3SWalletFactoryV2 is
     function updateProjectParty(address _projectParty) external onlyOwner {
         require(_projectParty != address(0), "Invalid address");
         projectParty = _projectParty;
+    }
+
+    function updateSystemSigner(address singer) external onlyOwner {
+        require(singer != address(0), "Invalid address");
+        systemSigner = singer;
+    }
+
+    function updateIsMintLimited(bool isLimited) external onlyOwner {
+        isMintLimited = isLimited;
     }
 
     /**
@@ -229,12 +310,12 @@ contract A3SWalletFactoryV2 is
     /**
      * @dev See {IA3SWalletFactory-predictWalletAddress}.
      */
-    function predictWalletAddress(bytes32 salt)
+    function predictWalletAddress(address owner, bytes32 salt)
         external
         view
         returns (address)
     {
-        bytes32 mutantSalt = keccak256(abi.encodePacked(msg.sender, salt));
+        bytes32 mutantSalt = keccak256(abi.encodePacked(owner, salt));
         return A3SWalletHelper.walletAddress(mutantSalt);
     }
 

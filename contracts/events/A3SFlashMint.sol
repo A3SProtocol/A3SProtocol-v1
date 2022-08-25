@@ -2,8 +2,8 @@
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "../IA3SWalletFactory.sol";
-import "../IMerkleWhitelist.sol";
+import "../v2/IA3SWalletFactoryV2.sol";
+import "../v2/IMerkleWhitelistV2.sol";
 
 contract A3SFlashMint is Ownable {
     address private _whitelist;
@@ -20,12 +20,14 @@ contract A3SFlashMint is Ownable {
 
     function bunchMint(address recipient, uint256 amount) public onlyOwner {
         bytes32 salt;
+        string memory approvalCode;
         bytes32[] memory proof;
         for (uint256 index; index < amount; index++) {
             salt = keccak256(abi.encodePacked(block.timestamp, index));
-            IA3SWalletFactory(_factory).mintWallet(
+            IA3SWalletFactoryV2(_factory).mintWallet(
                 recipient,
                 salt,
+                approvalCode,
                 false,
                 proof
             );
@@ -35,15 +37,15 @@ contract A3SFlashMint is Ownable {
     function flashMint(address recipient, uint256 amount) external onlyOwner {
         require(Ownable(_whitelist).owner() == address(this), "Unauthorized");
         require(
-            IMerkleWhitelist(_whitelist).isLimited(),
+            IMerkleWhitelistV2(_whitelist).isLimited(),
             "Whitelist is unlimited"
         );
 
-        IMerkleWhitelist(_whitelist).updateIsLimited(false);
+        IMerkleWhitelistV2(_whitelist).updateIsLimited(false);
 
         bunchMint(recipient, amount);
 
-        IMerkleWhitelist(_whitelist).updateIsLimited(true);
+        IMerkleWhitelistV2(_whitelist).updateIsLimited(true);
 
         emit FlashMint(recipient, amount);
     }

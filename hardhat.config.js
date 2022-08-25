@@ -50,13 +50,6 @@ module.exports = {
       url: process.env.RINKEBY_URL,
       accounts: [process.env.TEST1_PRIVATE_KEY],
     },
-
-    ganache_test: {
-      url: "HTTP://127.0.0.1:7545",
-      chainId: 1337,
-      gas: 10000000000,
-      accounts: "remote",
-    },
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,

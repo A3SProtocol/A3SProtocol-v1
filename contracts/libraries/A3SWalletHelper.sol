@@ -3,7 +3,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts-upgradeable/utils/Create2Upgradeable.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
-import "../A3SWallet.sol";
+import "../v1/A3SWallet.sol";
 
 library A3SWalletHelper {
     function deployWallet(bytes32 salt) external returns (address) {
